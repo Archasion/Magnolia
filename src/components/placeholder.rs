@@ -4,10 +4,11 @@ use async_trait::async_trait;
 use twilight_model::application::interaction::message_component::MessageComponentInteractionData;
 use twilight_model::channel::message::component::{Button, ButtonStyle};
 use twilight_model::channel::message::Component;
-use twilight_model::http::interaction::{InteractionResponse, InteractionResponseType};
-use twilight_util::builder::InteractionResponseDataBuilder;
+use twilight_model::http::interaction::InteractionResponse;
 
 use crate::components::component_handler::ComponentHandler;
+use crate::modals::modal_handler::ModalHandler;
+use crate::modals::placeholder::PlaceholderModal;
 
 pub struct PlaceholderComponent;
 
@@ -27,13 +28,6 @@ impl ComponentHandler for PlaceholderComponent {
 	async fn exec(
 		_component: &Box<MessageComponentInteractionData>,
 	) -> Result<InteractionResponse, Box<dyn Error + Send + Sync>> {
-		Ok(InteractionResponse {
-			kind: InteractionResponseType::ChannelMessageWithSource,
-			data: Some(
-				InteractionResponseDataBuilder::new()
-					.content("This is a placeholder component")
-					.build(),
-			),
-		})
+		Ok(PlaceholderModal::model())
 	}
 }

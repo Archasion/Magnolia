@@ -1,5 +1,6 @@
 mod commands;
 mod components;
+mod modals;
 
 use std::env;
 use std::error::Error;
@@ -13,6 +14,7 @@ use twilight_model::http::interaction::InteractionResponse;
 
 use crate::commands::command_handler::CommandHandler;
 use crate::components::component_handler::ComponentHandler;
+use crate::modals::modal_handler::ModalHandler;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -94,6 +96,12 @@ async fn handle_event<'a>(
 						),
 						_ => None,
 					}
+				},
+				Some(InteractionData::ModalSubmit(modal)) => match modal.custom_id.as_str() {
+					"placeholder" => {
+						Some(modals::placeholder::PlaceholderModal::exec(&modal).await?)
+					},
+					_ => None,
 				},
 				_ => None,
 			};
