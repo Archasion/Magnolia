@@ -19,9 +19,7 @@ impl ModalHandler for PlaceholderModal {
 				.max_length(256)
 				.build();
 
-		ModalBuilder::new()
-			.title("Placeholder")
-			.custom_id("placeholder")
+		ModalBuilder::new("Placeholder", "placeholder")
 			.add_component(text_field)
 			.build()
 	}
