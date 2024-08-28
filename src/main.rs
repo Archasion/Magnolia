@@ -1,4 +1,5 @@
 mod commands;
+mod components;
 
 use std::{env, error::Error, sync::Arc};
 use twilight_cache_inmemory::{DefaultInMemoryCache, ResourceType};
@@ -8,6 +9,7 @@ use twilight_model::application::interaction::InteractionData;
 use twilight_model::http::interaction::InteractionResponse;
 
 use crate::commands::command_handler::CommandHandler;
+use crate::components::component_handler::ComponentHandler;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -71,24 +73,40 @@ async fn handle_event<'a>(
             // Publish commands every time the bot starts
             // to ensure they are always up-to-date.
             http.interaction(client.application.id)
-                .set_global_commands(&[commands::placeholder::PlaceholderCommand::data()])
+                .set_global_commands(&[commands::placeholder::PlaceholderCommand::model()])
                 .await?;
         }
         Event::InteractionCreate(interaction) => {
             let response: Option<InteractionResponse> = match &interaction.data {
                 Some(InteractionData::ApplicationCommand(command)) => match command.name.as_str() {
-                    "help" => Some(commands::placeholder::PlaceholderCommand::exec(&interaction).await?),
+                    "placeholder" => {
+                        Some(commands::placeholder::PlaceholderCommand::exec(&command).await?)
+                    }
                     _ => None,
                 },
+                Some(InteractionData::MessageComponent(component)) => {
+                    match component.custom_id.as_str() {
+                        "placeholder" => Some(
+                            components::placeholder::PlaceholderComponent::exec(&component).await?,
+                        ),
+                        _ => None,
+                    }
+                }
                 _ => None,
             };
 
             if let Some(response) = response {
-                http.interaction(interaction.application_id)
+                let e = http
+                    .interaction(interaction.application_id)
                     .create_response(interaction.id, &interaction.token, &response)
-                    .await?;
+                    .await
+                    .err();
+
+                if let Some(e) = e {
+                    tracing::error!(?e, "error creating response for interaction");
+                }
             } else {
-                tracing::warn!("no response generated for interaction: {:?}", interaction);
+                tracing::warn!(?interaction, "no response generated for interaction");
             }
         }
         _ => {}
