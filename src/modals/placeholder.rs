@@ -2,11 +2,11 @@ use std::error::Error;
 
 use async_trait::async_trait;
 use twilight_model::application::interaction::modal::ModalInteractionData;
-use twilight_model::channel::message::component::{ActionRow, TextInput, TextInputStyle};
-use twilight_model::channel::message::Component;
+use twilight_model::channel::message::component::TextInputStyle;
 use twilight_model::http::interaction::{InteractionResponse, InteractionResponseType};
 use twilight_util::builder::InteractionResponseDataBuilder;
 
+use crate::modals::builders::{ModalBuilder, TextInputBuilder};
 use crate::modals::modal_handler::ModalHandler;
 
 pub struct PlaceholderModal;
@@ -14,31 +14,16 @@ pub struct PlaceholderModal;
 #[async_trait]
 impl ModalHandler for PlaceholderModal {
 	fn model() -> InteractionResponse {
-		let text_field = Component::TextInput(TextInput {
-			custom_id: "placeholder".to_owned(),
-			label: "Placeholder".to_owned(),
-			max_length: Some(256),
-			min_length: None,
-			placeholder: None,
-			required: None,
-			style: TextInputStyle::Paragraph,
-			value: None,
-		});
+		let text_field =
+			TextInputBuilder::new("Placeholder", "placeholder", TextInputStyle::Paragraph)
+				.max_length(256)
+				.build();
 
-		let action_row = Component::ActionRow(ActionRow {
-			components: vec![text_field],
-		});
-
-		InteractionResponse {
-			kind: InteractionResponseType::Modal,
-			data: Some(
-				InteractionResponseDataBuilder::new()
-					.title("Placeholder")
-					.custom_id("placeholder")
-					.components([action_row])
-					.build(),
-			),
-		}
+		ModalBuilder::new()
+			.title("Placeholder")
+			.custom_id("placeholder")
+			.add_component(text_field)
+			.build()
 	}
 
 	async fn exec(

@@ -77,9 +77,14 @@ async fn handle_event<'a>(
 
 			// Publish commands every time the bot starts
 			// to ensure they are always up-to-date.
-			http.interaction(client.application.id)
+			let global_commands = http
+				.interaction(client.application.id)
 				.set_global_commands(&[commands::placeholder::PlaceholderCommand::model()])
+				.await?
+				.models()
 				.await?;
+
+			tracing::info!("published {} global commands", global_commands.len());
 		},
 		Event::InteractionCreate(interaction) => {
 			let response: Option<InteractionResponse> = match &interaction.data {
