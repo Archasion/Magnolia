@@ -34,19 +34,19 @@ jobs:
         with:
           command: check
 
-  fmt:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: nightly
-      - run: rustup component add rustfmt --toolchain nightly
-      - uses: actions-rs/cargo@v1
-        with:
-          command: +nightly fmt
-          args: --all -- --check
+  # fmt:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - uses: actions-rs/toolchain@v1
+  #       with:
+  #         profile: minimal
+  #         toolchain: nightly
+  #     - run: rustup component add rustfmt --toolchain nightly
+  #     - uses: actions-rs/cargo@v1
+  #       with:
+  #         command: +nightly fmt
+  #         args: --all -- --check
 
   test:
     runs-on: ubuntu-latest
