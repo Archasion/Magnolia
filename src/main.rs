@@ -92,21 +92,21 @@ async fn handle_event<'a>(
 			let response: Option<InteractionResponse> = match &interaction.data {
 				Some(InteractionData::ApplicationCommand(command)) => match command.name.as_str() {
 					"placeholder" => {
-						Some(commands::placeholder::PlaceholderCommand::exec(&command).await?)
+						Some(commands::placeholder::PlaceholderCommand::exec(command).await?)
 					},
 					_ => None,
 				},
 				Some(InteractionData::MessageComponent(component)) => {
 					match component.custom_id.as_str() {
 						"placeholder" => Some(
-							components::placeholder::PlaceholderComponent::exec(&component).await?,
+							components::placeholder::PlaceholderComponent::exec(component).await?,
 						),
 						_ => None,
 					}
 				},
 				Some(InteractionData::ModalSubmit(modal)) => match modal.custom_id.as_str() {
 					"placeholder" => {
-						Some(modals::placeholder::PlaceholderModal::exec(&modal).await?)
+						Some(modals::placeholder::PlaceholderModal::exec(modal).await?)
 					},
 					_ => None,
 				},

@@ -9,6 +9,6 @@ use twilight_model::http::interaction::InteractionResponse;
 pub trait CommandHandler {
 	fn model() -> Command;
 	async fn exec(
-		command: &Box<CommandData>,
+		command: &CommandData,
 	) -> Result<InteractionResponse, Box<dyn Error + Send + Sync>>;
 }

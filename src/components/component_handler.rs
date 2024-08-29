@@ -9,6 +9,6 @@ use twilight_model::http::interaction::InteractionResponse;
 pub trait ComponentHandler {
 	fn model() -> Component;
 	async fn exec(
-		component: &Box<MessageComponentInteractionData>,
+		component: &MessageComponentInteractionData,
 	) -> Result<InteractionResponse, Box<dyn Error + Send + Sync>>;
 }

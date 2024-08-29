@@ -24,7 +24,7 @@ impl ComponentHandler for PlaceholderComponent {
 	}
 
 	async fn exec(
-		_component: &Box<MessageComponentInteractionData>,
+		_component: &MessageComponentInteractionData,
 	) -> Result<InteractionResponse, Box<dyn Error + Send + Sync>> {
 		Ok(PlaceholderModal::model())
 	}

@@ -29,7 +29,7 @@ impl CommandHandler for PlaceholderCommand {
 	}
 
 	async fn exec(
-		_command: &Box<CommandData>,
+		_command: &CommandData,
 	) -> Result<InteractionResponse, Box<dyn Error + Send + Sync>> {
 		let button_action_row = Component::ActionRow(ActionRow {
 			components: vec![PlaceholderComponent::model()],
