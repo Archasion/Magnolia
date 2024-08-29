@@ -1,5 +1,6 @@
 name: CI
 on:
+  workflow_dispatch:
   push:
     paths:
       - src/*
@@ -41,10 +42,10 @@ jobs:
         with:
           profile: minimal
           toolchain: nightly
-      - run: rustup component add rustfmt
+      - run: rustup component add rustfmt --toolchain nightly
       - uses: actions-rs/cargo@v1
         with:
-          command: fmt
+          command: +nightly fmt
           args: --all -- --check
 
   test:
