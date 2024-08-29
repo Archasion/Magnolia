@@ -23,6 +23,8 @@ impl CommandHandler for PlaceholderCommand {
 			"This is a placeholder command",
 			CommandType::ChatInput,
 		)
+		.validate()
+		.expect("failed to build command")
 		.build()
 	}
 

@@ -6,7 +6,8 @@ use twilight_model::channel::message::component::TextInputStyle;
 use twilight_model::http::interaction::{InteractionResponse, InteractionResponseType};
 use twilight_util::builder::InteractionResponseDataBuilder;
 
-use crate::modals::builders::{ModalBuilder, TextInputBuilder};
+use crate::builders::component::ActionRowBuilder;
+use crate::builders::modal::{ModalBuilder, TextInputBuilder};
 use crate::modals::modal_handler::ModalHandler;
 
 pub struct PlaceholderModal;
@@ -14,13 +15,17 @@ pub struct PlaceholderModal;
 #[async_trait]
 impl ModalHandler for PlaceholderModal {
 	fn model() -> InteractionResponse {
-		let text_field =
+		let text_input =
 			TextInputBuilder::new("Placeholder", "placeholder", TextInputStyle::Paragraph)
 				.max_length(256)
 				.build();
 
+		let action_row = ActionRowBuilder::new().add_component(text_input).build();
+
 		ModalBuilder::new("Placeholder", "placeholder")
-			.add_component(text_field)
+			.add_component(action_row)
+			.validate()
+			.expect("failed to build modal")
 			.build()
 	}
 

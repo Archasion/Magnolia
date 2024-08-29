@@ -6,7 +6,7 @@ use twilight_model::channel::message::component::ButtonStyle;
 use twilight_model::channel::message::Component;
 use twilight_model::http::interaction::InteractionResponse;
 
-use crate::components::builders::ButtonBuilder;
+use crate::builders::component::ButtonBuilder;
 use crate::components::component_handler::ComponentHandler;
 use crate::modals::modal_handler::ModalHandler;
 use crate::modals::placeholder::PlaceholderModal;
@@ -16,9 +16,10 @@ pub struct PlaceholderComponent;
 #[async_trait]
 impl ComponentHandler for PlaceholderComponent {
 	fn model() -> Component {
-		ButtonBuilder::new(ButtonStyle::Primary)
+		ButtonBuilder::new("placeholder", ButtonStyle::Primary)
 			.label("Placeholder")
-			.custom_id("placeholder")
+			.validate()
+			.expect("failed to build button")
 			.build()
 	}
 
