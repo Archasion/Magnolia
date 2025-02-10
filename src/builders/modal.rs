@@ -1,14 +1,13 @@
 #![allow(dead_code)]
 
-use std::error::Error;
-
+use anyhow::Context;
 use twilight_model::channel::message::component::{TextInput, TextInputStyle};
 use twilight_model::channel::message::Component;
 use twilight_model::http::interaction::{
     InteractionResponse, InteractionResponseData, InteractionResponseType,
 };
 use twilight_validate::component::{
-    action_row as validate_action_row, text_input as validate_text_input, ComponentValidationError,
+    action_row as validate_action_row, text_input as validate_text_input,
 };
 
 const MODAL_COMPONENT_COUNT: usize = 5;
@@ -79,20 +78,14 @@ impl TextInputBuilder {
         self
     }
 
-    /// Ensure the text input is valid.
-    ///
-    /// # Errors
-    ///
-    /// Refer to the errors section of [`twilight_validate::component::text_input`]
-    /// for possible errors.
-    pub fn validate(self) -> Result<Self, ComponentValidationError> {
-        validate_text_input(&self.0)?;
-        Ok(self)
+    /// Consume the builder, returning a [`Component::TextInput`].
+    pub fn build(self) -> anyhow::Result<Component> {
+        validate_text_input(&self.0).context("validate modal text input")?;
+        Ok(Component::TextInput(self.0))
     }
 
-    /// Consume the builder, returning a [`Component::TextInput`].
-    #[must_use = "must be used in an action row builder"]
-    pub fn build(self) -> Component {
+    /// Consume the builder, returning a [`Component::TextInput`] without validation.
+    pub fn build_unchecked(self) -> Component {
         Component::TextInput(self.0)
     }
 }
@@ -140,72 +133,78 @@ impl ModalBuilder {
     }
 
     /// Ensure the modal is valid.
-    pub fn validate(self) -> Result<Self, Box<dyn Error + Send + Sync>> {
+    fn validate(&self) -> anyhow::Result<()> {
         if let Some(title) = &self.0.title {
             // Ensure title is not empty
             if title.is_empty() {
-                return Err("Title must not be empty".into());
+                anyhow::bail!("Title must not be empty");
             }
 
             // Ensure title does not exceed the maximum length
             if title.len() > MODAL_TITLE_LENGTH {
-                return Err(
-                    format!("Title must not exceed {MODAL_TITLE_LENGTH} characters").into(),
-                );
+                anyhow::bail!("Title must not exceed {} characters", MODAL_TITLE_LENGTH);
             }
         } else {
-            return Err("Title must not be empty".into());
+            anyhow::bail!("Title must not be empty");
         }
 
         if let Some(custom_id) = &self.0.custom_id {
             // Ensure custom ID is not empty
             if custom_id.is_empty() {
-                return Err("Custom ID must not be empty".into());
+                anyhow::bail!("Custom ID must not be empty");
             }
 
             // Ensure custom ID does not exceed the maximum length
             if custom_id.len() > MODAL_CUSTOM_ID_LENGTH {
-                return Err(format!(
-                    "Custom ID must not exceed {MODAL_CUSTOM_ID_LENGTH} characters"
-                )
-                .into());
+                anyhow::bail!(
+                    "Custom ID must not exceed {} characters",
+                    MODAL_CUSTOM_ID_LENGTH
+                );
             }
         } else {
-            return Err("Custom ID must not be empty".into());
+            anyhow::bail!("Custom ID must not be empty");
         }
 
         // Ensure components are not empty
         if self.0.components.is_none() {
-            return Err("Modal must have at least one component".into());
+            anyhow::bail!("Modal must have at least one component");
         }
 
         // Ensure the number of components does not exceed the maximum
         if self.0.components.as_ref().unwrap().len() > MODAL_COMPONENT_COUNT {
-            return Err(format!(
-                "Modal must not have more than {MODAL_COMPONENT_COUNT} components"
-            )
-            .into());
+            anyhow::bail!(
+                "Modal must not have more than {} components",
+                MODAL_COMPONENT_COUNT
+            );
         }
 
         for component in self.0.components.as_ref().unwrap() {
             if let Component::ActionRow(action_row) = component {
                 // Ensure ActionRow contains exactly one TextInput component
                 if action_row.components.len() != 1 {
-                    return Err("ActionRow must contain exactly one TextInput component".into());
+                    anyhow::bail!("ActionRow must contain exactly one TextInput component");
                 }
 
-                validate_action_row(action_row)?;
+                validate_action_row(action_row).context("validate action row")?;
             } else {
-                return Err("Modal must only contain ActionRow components".into());
+                anyhow::bail!("Modal must only contain ActionRow components");
             }
         }
 
-        Ok(self)
+        Ok(())
     }
 
     /// Consume the builder, returning an [`InteractionResponse`].
-    #[must_use = "must be used to build a modal"]
-    pub fn build(self) -> InteractionResponse {
+    pub fn build(self) -> anyhow::Result<InteractionResponse> {
+        self.validate().context("validate modal")?;
+        Ok(InteractionResponse {
+            kind: InteractionResponseType::Modal,
+            data: Some(self.0),
+        })
+    }
+
+    /// Consume the builder, returning an [`InteractionResponse`] without validation.
+    pub fn build_unchecked(self) -> InteractionResponse {
         InteractionResponse {
             kind: InteractionResponseType::Modal,
             data: Some(self.0),
@@ -226,9 +225,8 @@ mod tests {
             .placeholder(TEXT)
             .required(true)
             .value(TEXT)
-            .validate()
-            .expect("expected valid text input")
-            .build();
+            .build()
+            .expect("expected valid text input");
 
         let Component::TextInput(text_input) = text_input else {
             panic!("expected text input component");
@@ -249,9 +247,8 @@ mod tests {
         let modal = ModalBuilder::new(TEXT, CUSTOM_ID)
             .set_components([action_row.clone()])
             .add_component(action_row)
-            .validate()
-            .expect("expected valid modal")
-            .build();
+            .build()
+            .expect("expected valid modal");
 
         assert_eq!(modal.kind, InteractionResponseType::Modal);
 

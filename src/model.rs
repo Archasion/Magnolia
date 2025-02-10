@@ -12,15 +12,22 @@ pub(crate) mod test {
     pub(crate) const TEXT: &'static str = "Label";
 
     pub(crate) fn button() -> Component {
-        ButtonBuilder::new(CUSTOM_ID, ButtonStyle::Primary).build()
+        ButtonBuilder::new(CUSTOM_ID, ButtonStyle::Primary)
+            .build()
+            .expect("expected button to be valid")
     }
 
     pub(crate) fn text_input() -> Component {
-        TextInputBuilder::new(TEXT, CUSTOM_ID, TextInputStyle::Short).build()
+        TextInputBuilder::new(TEXT, CUSTOM_ID, TextInputStyle::Short)
+            .build()
+            .expect("expected text input to be valid")
     }
 
     pub(crate) fn modal_action_row() -> Component {
-        ActionRowBuilder::new().add_component(text_input()).build()
+        ActionRowBuilder::new()
+            .add_component(text_input())
+            .build()
+            .expect("expected action row to be valid")
     }
 
     pub(crate) fn select_menu_option() -> SelectMenuOption {

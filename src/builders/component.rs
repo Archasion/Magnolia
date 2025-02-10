@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use anyhow::Context;
 use twilight_model::channel::message::component::{
     ActionRow, Button, ButtonStyle, SelectMenu, SelectMenuOption, SelectMenuType,
 };
@@ -71,20 +72,14 @@ impl ButtonBuilder {
         self
     }
 
-    /// Ensure the button is valid.
-    ///
-    /// # Errors
-    ///
-    /// Refer to the errors section of [`twilight_validate::component::button`]
-    /// for possible errors.
-    pub fn validate(self) -> Result<Self, ComponentValidationError> {
-        validate_button(&self.0)?;
-        Ok(self)
+    /// Consume the builder, returning a [`Component::Button`].
+    pub fn build(self) -> anyhow::Result<Component> {
+        validate_button(&self.0).context("validate button")?;
+        Ok(Component::Button(self.0))
     }
 
-    /// Consume the builder, returning a [`Component::Button`].
-    #[must_use = "must be used in an action row builder"]
-    pub fn build(self) -> Component {
+    /// Consume the builder, returning a [`Component::Button`] without validation.
+    pub fn build_unchecked(self) -> Component {
         Component::Button(self.0)
     }
 }
@@ -118,20 +113,14 @@ impl ActionRowBuilder {
         self
     }
 
-    /// Ensure the action row is valid.
-    ///
-    /// # Errors
-    ///
-    /// Refer to the errors section of [`twilight_validate::component::action_row`]
-    /// for possible errors.
-    pub fn validate(self) -> Result<Self, ComponentValidationError> {
-        validate_action_row(&self.0)?;
-        Ok(self)
+    /// Consume the builder, returning a [`Component::ActionRow`].
+    pub fn build(self) -> anyhow::Result<Component> {
+        validate_action_row(&self.0).context("validate action row")?;
+        Ok(Component::ActionRow(self.0))
     }
 
-    /// Consume the builder, returning a [`Component::ActionRow`].
-    #[must_use = "must be built into an action row"]
-    pub fn build(self) -> Component {
+    /// Consume the builder, returning a [`Component::ActionRow`] without validation.
+    pub fn build_unchecked(self) -> Component {
         Component::ActionRow(self.0)
     }
 }
@@ -297,9 +286,8 @@ mod tests {
             .emoji(EmojiReactionType::Unicode {
                 name: "👍".to_owned(),
             })
-            .validate()
-            .expect("failed to validate button")
-            .build();
+            .build()
+            .expect("failed to validate button");
 
         let Component::Button(button) = button else {
             panic!("expected button component");
@@ -319,9 +307,8 @@ mod tests {
         let action_row = ActionRowBuilder::new()
             .set_components([button.clone()])
             .add_component(button)
-            .validate()
-            .expect("failed to validate action row")
-            .build();
+            .build()
+            .expect("failed to validate action row");
 
         let Component::ActionRow(action_row) = action_row else {
             panic!("expected action row component");

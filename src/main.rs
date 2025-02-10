@@ -5,14 +5,13 @@ mod modals;
 mod model;
 
 use std::env;
-use std::error::Error;
 use std::sync::Arc;
 
+use anyhow::Context;
 use twilight_cache_inmemory::{DefaultInMemoryCache, ResourceType};
 use twilight_gateway::{Event, EventTypeFlags, Intents, Shard, ShardId, StreamExt as _};
 use twilight_http::Client as HttpClient;
 use twilight_model::application::interaction::InteractionData;
-use twilight_model::http::interaction::InteractionResponse;
 
 use crate::commands::command_handler::CommandHandler;
 use crate::components::component_handler::ComponentHandler;
@@ -23,7 +22,7 @@ async fn main() -> anyhow::Result<()> {
     // Initialize the tracing subscriber.
     tracing_subscriber::fmt::init();
 
-    let token = env::var("DISCORD_TOKEN")?;
+    let token = env::var("DISCORD_TOKEN").context("get DISCORD_TOKEN env")?;
 
     // Use intents to only receive guild message events.
     let mut shard = Shard::new(
@@ -65,10 +64,7 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn handle_event(
-    event: Event,
-    http: Arc<HttpClient>,
-) -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn handle_event(event: Event, http: Arc<HttpClient>) -> anyhow::Result<()> {
     match event {
         Event::Ready(client) => {
             tracing::info!(
@@ -81,39 +77,42 @@ async fn handle_event(
             // to ensure they are always up-to-date.
             let global_commands = http
                 .interaction(client.application.id)
-                .set_global_commands(&[commands::placeholder::PlaceholderCommand::model()])
-                .await?
+                .set_global_commands(commands::models()?.as_slice())
+                .await
+                .context("publish global commands")?
                 .models()
-                .await?;
+                .await
+                .context("get global commands")?;
 
             tracing::info!("published {} global commands", global_commands.len());
         },
         Event::InteractionCreate(interaction) => {
-            let response: Option<InteractionResponse> = match &interaction.data {
-                Some(InteractionData::ApplicationCommand(command)) => match command.name.as_str() {
-                    "placeholder" => {
-                        Some(commands::placeholder::PlaceholderCommand::exec(command).await?)
-                    },
-                    _ => None,
+            let response = match &interaction.data {
+                Some(InteractionData::ApplicationCommand(command)) => {
+                    let handler: Box<dyn CommandHandler> = command.try_into()?;
+                    handler
+                        .exec()
+                        .await
+                        .with_context(|| format!("execute command: {}", command.name))
                 },
                 Some(InteractionData::MessageComponent(component)) => {
-                    match component.custom_id.as_str() {
-                        "placeholder" => Some(
-                            components::placeholder::PlaceholderComponent::exec(component).await?,
-                        ),
-                        _ => None,
-                    }
+                    let handler: Box<dyn ComponentHandler> = component.try_into()?;
+                    handler
+                        .exec()
+                        .await
+                        .with_context(|| format!("execute component: {}", component.custom_id))
                 },
-                Some(InteractionData::ModalSubmit(modal)) => match modal.custom_id.as_str() {
-                    "placeholder" => {
-                        Some(modals::placeholder::PlaceholderModal::exec(modal).await?)
-                    },
-                    _ => None,
+                Some(InteractionData::ModalSubmit(modal)) => {
+                    let handler: Box<dyn ModalHandler> = modal.try_into()?;
+                    handler
+                        .exec()
+                        .await
+                        .with_context(|| format!("execute modal: {}", modal.custom_id))
                 },
-                _ => None,
+                _ => anyhow::bail!("unsupported interaction type"),
             };
 
-            if let Some(response) = response {
+            if let Ok(response) = response {
                 let e = http
                     .interaction(interaction.application_id)
                     .create_response(interaction.id, &interaction.token, &response)

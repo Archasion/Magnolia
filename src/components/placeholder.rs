@@ -1,5 +1,3 @@
-use std::error::Error;
-
 use async_trait::async_trait;
 use twilight_model::application::interaction::message_component::MessageComponentInteractionData;
 use twilight_model::channel::message::component::ButtonStyle;
@@ -11,21 +9,19 @@ use crate::components::component_handler::ComponentHandler;
 use crate::modals::modal_handler::ModalHandler;
 use crate::modals::placeholder::PlaceholderModal;
 
-pub struct PlaceholderComponent;
+pub struct PlaceholderComponent<'a> {
+    pub data: &'a MessageComponentInteractionData,
+}
 
 #[async_trait]
-impl ComponentHandler for PlaceholderComponent {
-    fn model() -> Component {
+impl ComponentHandler for PlaceholderComponent<'_> {
+    fn model() -> anyhow::Result<Component> {
         ButtonBuilder::new("placeholder", ButtonStyle::Primary)
             .label("Placeholder")
-            .validate()
-            .expect("failed to build button")
             .build()
     }
 
-    async fn exec(
-        _component: &MessageComponentInteractionData,
-    ) -> Result<InteractionResponse, Box<dyn Error + Send + Sync>> {
-        Ok(PlaceholderModal::model())
+    async fn exec(&self) -> anyhow::Result<InteractionResponse> {
+        PlaceholderModal::model()
     }
 }

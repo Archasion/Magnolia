@@ -1,5 +1,4 @@
-use std::error::Error;
-
+use anyhow::Context;
 use async_trait::async_trait;
 use twilight_model::application::command::{Command, CommandType};
 use twilight_model::application::interaction::application_command::CommandData;
@@ -13,26 +12,26 @@ use crate::commands::command_handler::CommandHandler;
 use crate::components::component_handler::ComponentHandler;
 use crate::components::placeholder::PlaceholderComponent;
 
-pub struct PlaceholderCommand;
+pub struct PlaceholderCommand<'a> {
+    pub data: &'a CommandData,
+}
 
 #[async_trait]
-impl CommandHandler for PlaceholderCommand {
-    fn model() -> Command {
-        CommandBuilder::new(
+impl CommandHandler for PlaceholderCommand<'_> {
+    fn model() -> anyhow::Result<Command> {
+        Ok(CommandBuilder::new(
             "placeholder",
             "This is a placeholder command",
             CommandType::ChatInput,
         )
         .validate()
-        .expect("failed to build command")
-        .build()
+        .context("validate application command")?
+        .build())
     }
 
-    async fn exec(
-        _command: &CommandData,
-    ) -> Result<InteractionResponse, Box<dyn Error + Send + Sync>> {
+    async fn exec(&self) -> anyhow::Result<InteractionResponse> {
         let button_action_row = Component::ActionRow(ActionRow {
-            components: vec![PlaceholderComponent::model()],
+            components: vec![PlaceholderComponent::model()?],
         });
 
         Ok(InteractionResponse {
