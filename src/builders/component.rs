@@ -3,8 +3,10 @@
 use twilight_model::channel::message::component::{
     ActionRow, Button, ButtonStyle, SelectMenu, SelectMenuOption, SelectMenuType,
 };
-use twilight_model::channel::message::{Component, ReactionType};
+use twilight_model::channel::message::{Component, EmojiReactionType};
 use twilight_model::channel::ChannelType;
+use twilight_model::id::marker::SkuMarker;
+use twilight_model::id::Id;
 use twilight_validate::component::{
     action_row as validate_action_row, button as validate_button,
     select_menu as validate_select_menu, ComponentValidationError,
@@ -24,6 +26,7 @@ impl ButtonBuilder {
             emoji: None,
             label: None,
             url: None,
+            sku_id: None,
             style,
         })
     }
@@ -47,7 +50,7 @@ impl ButtonBuilder {
     /// Set an emoji icon for the button.
     ///
     /// Defaults to [`None`].
-    pub fn emoji(mut self, emoji: ReactionType) -> Self {
+    pub fn emoji(mut self, emoji: EmojiReactionType) -> Self {
         self.0.emoji = Some(emoji);
         self
     }
@@ -57,6 +60,14 @@ impl ButtonBuilder {
     /// Defaults to [`None`].
     pub fn url(mut self, url: impl Into<String>) -> Self {
         self.0.url = Some(url.into());
+        self
+    }
+
+    /// Set the SKU ID for a buy button.
+    ///
+    /// Defaults to [`None`].
+    pub fn sku_id(mut self, sku_id: impl Into<Id<SkuMarker>>) -> Self {
+        self.0.sku_id = Some(sku_id.into());
         self
     }
 
@@ -260,7 +271,7 @@ impl SelectMenuOptionBuilder {
     /// Set an emoji icon for the option.
     ///
     /// Defaults to [`None`].
-    pub fn emoji(mut self, emoji: ReactionType) -> Self {
+    pub fn emoji(mut self, emoji: EmojiReactionType) -> Self {
         self.0.emoji = Some(emoji);
         self
     }
@@ -283,7 +294,7 @@ mod tests {
     fn button() {
         let button = ButtonBuilder::new(CUSTOM_ID, ButtonStyle::Primary)
             .label(TEXT)
-            .emoji(ReactionType::Unicode {
+            .emoji(EmojiReactionType::Unicode {
                 name: "👍".to_owned(),
             })
             .validate()
@@ -297,7 +308,7 @@ mod tests {
         assert_eq!(button.custom_id.unwrap(), CUSTOM_ID);
         assert_eq!(button.label.unwrap(), TEXT);
         assert_eq!(button.disabled, false);
-        assert_eq!(button.emoji.unwrap(), ReactionType::Unicode {
+        assert_eq!(button.emoji.unwrap(), EmojiReactionType::Unicode {
             name: "👍".to_owned()
         });
     }
@@ -324,7 +335,7 @@ mod tests {
         let option = SelectMenuOptionBuilder::new(TEXT, CUSTOM_ID)
             .default(true)
             .description(TEXT)
-            .emoji(ReactionType::Unicode {
+            .emoji(EmojiReactionType::Unicode {
                 name: "👍".to_owned(),
             })
             .build();
@@ -333,7 +344,7 @@ mod tests {
         assert_eq!(option.value, CUSTOM_ID);
         assert_eq!(option.default, true);
         assert_eq!(option.description.unwrap(), TEXT);
-        assert_eq!(option.emoji.unwrap(), ReactionType::Unicode {
+        assert_eq!(option.emoji.unwrap(), EmojiReactionType::Unicode {
             name: "👍".to_owned()
         });
     }
