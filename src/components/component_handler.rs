@@ -7,8 +7,8 @@ use twilight_model::http::interaction::InteractionResponse;
 
 #[async_trait]
 pub trait ComponentHandler {
-	fn model() -> Component;
-	async fn exec(
-		component: &MessageComponentInteractionData,
-	) -> Result<InteractionResponse, Box<dyn Error + Send + Sync>>;
+    fn model() -> Component;
+    async fn exec(
+        component: &MessageComponentInteractionData,
+    ) -> Result<InteractionResponse, Box<dyn Error + Send + Sync>>;
 }

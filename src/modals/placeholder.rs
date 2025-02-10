@@ -14,35 +14,35 @@ pub struct PlaceholderModal;
 
 #[async_trait]
 impl ModalHandler for PlaceholderModal {
-	fn model() -> InteractionResponse {
-		let text_input =
-			TextInputBuilder::new("Placeholder", "placeholder", TextInputStyle::Paragraph)
-				.max_length(256)
-				.build();
+    fn model() -> InteractionResponse {
+        let text_input =
+            TextInputBuilder::new("Placeholder", "placeholder", TextInputStyle::Paragraph)
+                .max_length(256)
+                .build();
 
-		let action_row = ActionRowBuilder::new().add_component(text_input).build();
+        let action_row = ActionRowBuilder::new().add_component(text_input).build();
 
-		ModalBuilder::new("Placeholder", "placeholder")
-			.add_component(action_row)
-			.validate()
-			.expect("failed to build modal")
-			.build()
-	}
+        ModalBuilder::new("Placeholder", "placeholder")
+            .add_component(action_row)
+            .validate()
+            .expect("failed to build modal")
+            .build()
+    }
 
-	async fn exec(
-		modal: &ModalInteractionData,
-	) -> Result<InteractionResponse, Box<dyn Error + Send + Sync>> {
-		// The first component in the first action row is always present
-		// and is required, so we can call unwrap() on it
-		let input = modal.components[0].components[0].value.as_ref().unwrap();
+    async fn exec(
+        modal: &ModalInteractionData,
+    ) -> Result<InteractionResponse, Box<dyn Error + Send + Sync>> {
+        // The first component in the first action row is always present
+        // and is required, so we can call unwrap() on it
+        let input = modal.components[0].components[0].value.as_ref().unwrap();
 
-		Ok(InteractionResponse {
-			kind: InteractionResponseType::ChannelMessageWithSource,
-			data: Some(
-				InteractionResponseDataBuilder::new()
-					.content(format!("> {}", input))
-					.build(),
-			),
-		})
-	}
+        Ok(InteractionResponse {
+            kind: InteractionResponseType::ChannelMessageWithSource,
+            data: Some(
+                InteractionResponseDataBuilder::new()
+                    .content(format!("> {}", input))
+                    .build(),
+            ),
+        })
+    }
 }

@@ -7,8 +7,8 @@ use twilight_model::http::interaction::InteractionResponse;
 
 #[async_trait]
 pub trait CommandHandler {
-	fn model() -> Command;
-	async fn exec(
-		command: &CommandData,
-	) -> Result<InteractionResponse, Box<dyn Error + Send + Sync>>;
+    fn model() -> Command;
+    async fn exec(
+        command: &CommandData,
+    ) -> Result<InteractionResponse, Box<dyn Error + Send + Sync>>;
 }

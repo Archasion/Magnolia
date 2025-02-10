@@ -17,32 +17,32 @@ pub struct PlaceholderCommand;
 
 #[async_trait]
 impl CommandHandler for PlaceholderCommand {
-	fn model() -> Command {
-		CommandBuilder::new(
-			"placeholder",
-			"This is a placeholder command",
-			CommandType::ChatInput,
-		)
-		.validate()
-		.expect("failed to build command")
-		.build()
-	}
+    fn model() -> Command {
+        CommandBuilder::new(
+            "placeholder",
+            "This is a placeholder command",
+            CommandType::ChatInput,
+        )
+        .validate()
+        .expect("failed to build command")
+        .build()
+    }
 
-	async fn exec(
-		_command: &CommandData,
-	) -> Result<InteractionResponse, Box<dyn Error + Send + Sync>> {
-		let button_action_row = Component::ActionRow(ActionRow {
-			components: vec![PlaceholderComponent::model()],
-		});
+    async fn exec(
+        _command: &CommandData,
+    ) -> Result<InteractionResponse, Box<dyn Error + Send + Sync>> {
+        let button_action_row = Component::ActionRow(ActionRow {
+            components: vec![PlaceholderComponent::model()],
+        });
 
-		Ok(InteractionResponse {
-			kind: InteractionResponseType::ChannelMessageWithSource,
-			data: Some(
-				InteractionResponseDataBuilder::new()
-					.content("This is a placeholder command")
-					.components([button_action_row])
-					.build(),
-			),
-		})
-	}
+        Ok(InteractionResponse {
+            kind: InteractionResponseType::ChannelMessageWithSource,
+            data: Some(
+                InteractionResponseDataBuilder::new()
+                    .content("This is a placeholder command")
+                    .components([button_action_row])
+                    .build(),
+            ),
+        })
+    }
 }

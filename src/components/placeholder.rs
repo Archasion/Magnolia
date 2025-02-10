@@ -15,17 +15,17 @@ pub struct PlaceholderComponent;
 
 #[async_trait]
 impl ComponentHandler for PlaceholderComponent {
-	fn model() -> Component {
-		ButtonBuilder::new("placeholder", ButtonStyle::Primary)
-			.label("Placeholder")
-			.validate()
-			.expect("failed to build button")
-			.build()
-	}
+    fn model() -> Component {
+        ButtonBuilder::new("placeholder", ButtonStyle::Primary)
+            .label("Placeholder")
+            .validate()
+            .expect("failed to build button")
+            .build()
+    }
 
-	async fn exec(
-		_component: &MessageComponentInteractionData,
-	) -> Result<InteractionResponse, Box<dyn Error + Send + Sync>> {
-		Ok(PlaceholderModal::model())
-	}
+    async fn exec(
+        _component: &MessageComponentInteractionData,
+    ) -> Result<InteractionResponse, Box<dyn Error + Send + Sync>> {
+        Ok(PlaceholderModal::model())
+    }
 }
