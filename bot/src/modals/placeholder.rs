@@ -1,11 +1,11 @@
 use async_trait::async_trait;
+use builders::component::ActionRowBuilder;
+use builders::modal::{ModalBuilder, TextInputBuilder};
 use twilight_model::application::interaction::modal::ModalInteractionData;
 use twilight_model::channel::message::component::TextInputStyle;
 use twilight_model::http::interaction::{InteractionResponse, InteractionResponseType};
 use twilight_util::builder::InteractionResponseDataBuilder;
 
-use crate::builders::component::ActionRowBuilder;
-use crate::builders::modal::{ModalBuilder, TextInputBuilder};
 use crate::modals::ModalHandler;
 
 pub struct PlaceholderModal<'a> {

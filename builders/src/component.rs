@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use anyhow::Context;
 use twilight_model::channel::message::component::{
     ActionRow, Button, ButtonStyle, SelectMenu, SelectMenuOption, SelectMenuType,
@@ -88,6 +86,12 @@ impl ButtonBuilder {
 #[derive(Debug, Clone)]
 #[must_use = "must be built into an action row"]
 pub struct ActionRowBuilder(ActionRow);
+
+impl Default for ActionRowBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl ActionRowBuilder {
     /// Create a new [`Component::ActionRow`] builder.

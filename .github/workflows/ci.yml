@@ -5,13 +5,13 @@ on:
     branches:
       - main
     paths:
-      - "src/**"
+      - "../../bot/src/**"
       - "Cargo.toml"
   pull_request:
     branches:
       - main
     paths:
-      - "src/**"
+      - "../../bot/src/**"
       - "Cargo.toml"
 
 concurrency:

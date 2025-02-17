@@ -1,0 +1,9 @@
+[package]
+name = "builders"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.86"
+twilight-model = "0.16.0"
+twilight-validate = "0.16.0"

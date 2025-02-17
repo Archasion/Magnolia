@@ -13,6 +13,7 @@ use crate::components::placeholder::PlaceholderComponent;
 use crate::components::ComponentHandler;
 
 pub struct PlaceholderCommand<'a> {
+    #[allow(dead_code)]
     pub data: &'a CommandData,
 }
 

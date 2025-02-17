@@ -89,6 +89,23 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f68f53c83ab957f72c32642f3868eec03eb974d1fb82e453128456482613d36"
 
 [[package]]
+name = "bot"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "builders",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "twilight-cache-inmemory",
+ "twilight-gateway",
+ "twilight-http",
+ "twilight-model",
+ "twilight-util",
+]
+
+[[package]]
 name = "brotli-decompressor"
 version = "4.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -99,19 +116,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "bug-tracker"
+name = "builders"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "async-trait",
- "tokio",
- "tracing",
- "tracing-subscriber",
- "twilight-cache-inmemory",
- "twilight-gateway",
- "twilight-http",
  "twilight-model",
- "twilight-util",
  "twilight-validate",
 ]
 

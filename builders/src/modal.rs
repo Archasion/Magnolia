@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use anyhow::Context;
 use twilight_model::channel::message::component::{TextInput, TextInputStyle};
 use twilight_model::channel::message::Component;

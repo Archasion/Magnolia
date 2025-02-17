@@ -1,19 +1,5 @@
-[package]
-name = "bug-tracker"
-version = "0.1.0"
-edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-tokio = { version = "1.39.3", features = ["rt", "rt-multi-thread", "macros"] }
-async-trait = "0.1.81"
-anyhow = "1.0.86"
-twilight-http = "0.16.0"
-twilight-cache-inmemory = "0.16.0"
-twilight-gateway = "0.16.0"
-twilight-model = "0.16.0"
-twilight-util = { version = "0.16.0", features = ["builder"] }
-twilight-validate = "0.16.0"
-tracing-subscriber = "0.3.18"
-tracing = "0.1.40"
+[workspace]
+members = [
+    "builders",
+    "bot",
+]

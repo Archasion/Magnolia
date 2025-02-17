@@ -1,8 +1,6 @@
-mod builders;
 mod commands;
 mod components;
 mod modals;
-mod model;
 
 use std::env;
 use std::sync::Arc;

@@ -22,9 +22,7 @@ impl<'a> TryFrom<&'a Box<MessageComponentInteractionData>> for Box<dyn Component
         data: &'a Box<MessageComponentInteractionData>,
     ) -> Result<Box<dyn ComponentHandler + 'a>, Self::Error> {
         match data.custom_id.as_str() {
-            "placeholder" => Ok(Box::new(placeholder::PlaceholderComponent {
-                data,
-            })),
+            "placeholder" => Ok(Box::new(placeholder::PlaceholderComponent { data })),
             unknown => anyhow::bail!("unknown component custom id: {}", unknown),
         }
     }
