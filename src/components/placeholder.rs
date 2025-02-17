@@ -5,9 +5,9 @@ use twilight_model::channel::message::Component;
 use twilight_model::http::interaction::InteractionResponse;
 
 use crate::builders::component::ButtonBuilder;
-use crate::components::component_handler::ComponentHandler;
-use crate::modals::modal_handler::ModalHandler;
+use crate::components::ComponentHandler;
 use crate::modals::placeholder::PlaceholderModal;
+use crate::modals::ModalHandler;
 
 pub struct PlaceholderComponent<'a> {
     pub data: &'a MessageComponentInteractionData,

@@ -8,9 +8,9 @@ use twilight_model::http::interaction::{InteractionResponse, InteractionResponse
 use twilight_util::builder::command::CommandBuilder;
 use twilight_util::builder::InteractionResponseDataBuilder;
 
-use crate::commands::command_handler::CommandHandler;
-use crate::components::component_handler::ComponentHandler;
+use crate::commands::CommandHandler;
 use crate::components::placeholder::PlaceholderComponent;
+use crate::components::ComponentHandler;
 
 pub struct PlaceholderCommand<'a> {
     pub data: &'a CommandData,

@@ -6,7 +6,7 @@ use twilight_util::builder::InteractionResponseDataBuilder;
 
 use crate::builders::component::ActionRowBuilder;
 use crate::builders::modal::{ModalBuilder, TextInputBuilder};
-use crate::modals::modal_handler::ModalHandler;
+use crate::modals::ModalHandler;
 
 pub struct PlaceholderModal<'a> {
     pub data: &'a ModalInteractionData,

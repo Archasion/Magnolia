@@ -13,9 +13,9 @@ use twilight_gateway::{Event, EventTypeFlags, Intents, Shard, ShardId, StreamExt
 use twilight_http::Client as HttpClient;
 use twilight_model::application::interaction::InteractionData;
 
-use crate::commands::command_handler::CommandHandler;
-use crate::components::component_handler::ComponentHandler;
-use crate::modals::modal_handler::ModalHandler;
+use crate::commands::CommandHandler;
+use crate::components::ComponentHandler;
+use crate::modals::ModalHandler;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
