@@ -9,8 +9,8 @@ pub mod test {
     use crate::component::{ActionRowBuilder, ButtonBuilder, SelectMenuOptionBuilder};
     use crate::modal::TextInputBuilder;
 
-    pub const CUSTOM_ID: &'static str = "custom_id";
-    pub const TEXT: &'static str = "Label";
+    pub const CUSTOM_ID: &str = "custom_id";
+    pub const TEXT: &str = "Label";
 
     /// Returns a [primary](ButtonStyle::Primary) button.
     pub fn button() -> Component {

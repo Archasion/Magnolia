@@ -299,7 +299,7 @@ mod tests {
 
         assert_eq!(button.custom_id.unwrap(), CUSTOM_ID);
         assert_eq!(button.label.unwrap(), TEXT);
-        assert_eq!(button.disabled, false);
+        assert!(!button.disabled);
         assert_eq!(button.emoji.unwrap(), EmojiReactionType::Unicode {
             name: "👍".to_owned()
         });
@@ -333,7 +333,7 @@ mod tests {
 
         assert_eq!(option.label, TEXT);
         assert_eq!(option.value, CUSTOM_ID);
-        assert_eq!(option.default, true);
+        assert!(option.default);
         assert_eq!(option.description.unwrap(), TEXT);
         assert_eq!(option.emoji.unwrap(), EmojiReactionType::Unicode {
             name: "👍".to_owned()
@@ -358,7 +358,7 @@ mod tests {
         };
 
         assert_eq!(select_menu.custom_id, CUSTOM_ID);
-        assert_eq!(select_menu.disabled, false);
+        assert!(!select_menu.disabled);
         assert_eq!(select_menu.options.unwrap().len(), 2);
         assert_eq!(select_menu.placeholder.unwrap(), TEXT);
         assert_eq!(select_menu.min_values.unwrap(), 1);
