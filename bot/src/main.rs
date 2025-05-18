@@ -62,6 +62,7 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
+#[tracing::instrument(skip(http))]
 async fn handle_event(event: Event, http: Arc<HttpClient>) -> anyhow::Result<()> {
     match event {
         Event::Ready(client) => {
