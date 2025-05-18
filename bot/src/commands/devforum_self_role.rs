@@ -3,6 +3,7 @@ use async_trait::async_trait;
 use builders::component::ActionRowBuilder;
 use twilight_model::application::command::{Command, CommandType};
 use twilight_model::application::interaction::Interaction;
+use twilight_model::guild::Permissions;
 use twilight_model::http::interaction::{InteractionResponse, InteractionResponseType};
 use twilight_util::builder::command::CommandBuilder;
 use twilight_util::builder::embed::{EmbedBuilder, ImageSource};
@@ -23,6 +24,7 @@ impl CommandHandler for DevForumSelfRole<'_> {
             "Send an info embed with a button to self-update DevForum roles.",
             CommandType::ChatInput,
         )
+        .default_member_permissions(Permissions::MANAGE_CHANNELS)
         .validate()
         .context("validate devforum-self-role command")?
         .build())
