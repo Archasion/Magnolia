@@ -5,6 +5,6 @@ edition = "2021"
 rust-version = "1.84.1"
 
 [dependencies]
-anyhow = "1.0.86"
+anyhow = "1.0.98"
 twilight-model = "0.16.0"
 twilight-validate = "0.16.0"

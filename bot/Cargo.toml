@@ -5,14 +5,14 @@ edition = "2021"
 rust-version = "1.84.1"
 
 [dependencies]
-tokio = { version = "1.39.3", features = ["rt", "rt-multi-thread", "macros"] }
-async-trait = "0.1.81"
-anyhow = "1.0.86"
+tokio = { version = "1.45.0", features = ["rt", "rt-multi-thread", "macros"] }
+async-trait = "0.1.88"
+anyhow = "1.0.98"
 twilight-http = "0.16.0"
 twilight-cache-inmemory = "0.16.0"
 twilight-gateway = "0.16.0"
 twilight-model = "0.16.0"
 twilight-util = { version = "0.16.0", features = ["builder"] }
-tracing-subscriber = "0.3.18"
-tracing = "0.1.40"
+tracing-subscriber = "0.3.19"
+tracing = "0.1.41"
 builders = { path = "../builders" }
