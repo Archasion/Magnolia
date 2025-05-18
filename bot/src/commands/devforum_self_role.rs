@@ -2,9 +2,11 @@ use anyhow::Context;
 use async_trait::async_trait;
 use builders::component::ActionRowBuilder;
 use twilight_model::application::command::{Command, CommandType};
-use twilight_model::application::interaction::Interaction;
+use twilight_model::application::interaction::{Interaction, InteractionContextType};
+use twilight_model::channel::message::MessageFlags;
 use twilight_model::guild::Permissions;
 use twilight_model::http::interaction::{InteractionResponse, InteractionResponseType};
+use twilight_model::oauth::ApplicationIntegrationType;
 use twilight_util::builder::command::CommandBuilder;
 use twilight_util::builder::embed::{EmbedBuilder, ImageSource};
 use twilight_util::builder::InteractionResponseDataBuilder;
@@ -24,6 +26,8 @@ impl CommandHandler for DevForumSelfRole<'_> {
             "Send an info embed with a button to self-update DevForum roles.",
             CommandType::ChatInput,
         )
+        .contexts([InteractionContextType::Guild])
+        .integration_types([ApplicationIntegrationType::GuildInstall])
         .default_member_permissions(Permissions::MANAGE_CHANNELS)
         .validate()
         .context("validate devforum-self-role command")?
@@ -52,12 +56,20 @@ impl CommandHandler for DevForumSelfRole<'_> {
             .build()
             .context("build action row")?;
 
+        let channel_id = self.0.channel.as_ref().context("get channel id")?.id;
+        state
+            .http
+            .create_message(channel_id)
+            .embeds(&[info_embed])
+            .components(&[action_row])
+            .await?;
+
         Ok(InteractionResponse {
             kind: InteractionResponseType::ChannelMessageWithSource,
             data: Some(
                 InteractionResponseDataBuilder::new()
-                    .embeds([info_embed])
-                    .components([action_row])
+                    .content("Successfully sent the self-role embed.")
+                    .flags(MessageFlags::EPHEMERAL)
                     .build(),
             ),
         })
