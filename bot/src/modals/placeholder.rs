@@ -39,7 +39,7 @@ impl ModalHandler for PlaceholderModal<'_> {
             kind: InteractionResponseType::ChannelMessageWithSource,
             data: Some(
                 InteractionResponseDataBuilder::new()
-                    .content(format!("> {}", input))
+                    .content(format!("> {input}"))
                     .build(),
             ),
         })
