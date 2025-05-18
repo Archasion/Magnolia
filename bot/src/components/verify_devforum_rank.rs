@@ -3,7 +3,7 @@ use std::sync::LazyLock;
 use anyhow::Context;
 use async_trait::async_trait;
 use builders::component::ButtonBuilder;
-use reqwest::header::AUTHORIZATION;
+use reqwest::header::{AUTHORIZATION, COOKIE};
 use serde::Deserialize;
 use serde_repr::Deserialize_repr;
 use twilight_model::application::interaction::Interaction;
@@ -20,6 +20,8 @@ pub(crate) struct VerifyDevForumRank<'a>(pub(crate) &'a Interaction);
 
 static ROVER_API_KEY: LazyLock<String> =
     LazyLock::new(|| std::env::var("ROVER_API_KEY").expect("ROVER_API_KEY must be set"));
+static DEVFORUM_COOKIE: LazyLock<Option<String>> =
+    LazyLock::new(|| std::env::var("DEVFORUM_COOKIE").ok());
 
 #[async_trait]
 impl ComponentHandler for VerifyDevForumRank<'_> {
@@ -37,7 +39,7 @@ impl ComponentHandler for VerifyDevForumRank<'_> {
         let rover_data = match fetch_rover_data(&state.request, guild_id, author_id).await {
             Ok(data) => data,
             Err(error) => {
-                tracing::warn!(%error);
+                tracing::warn!(?error);
                 return Ok(InteractionResponse {
                     kind: InteractionResponseType::ChannelMessageWithSource,
                     data: Some(
@@ -54,7 +56,7 @@ impl ComponentHandler for VerifyDevForumRank<'_> {
         let roblox_data = match fetch_roblox_data(&state.request, rover_data.roblox_id).await {
             Ok(data) => data,
             Err(error) => {
-                tracing::warn!(%error);
+                tracing::warn!(?error);
                 return Ok(InteractionResponse {
                     kind: InteractionResponseType::ChannelMessageWithSource,
                     data: Some(
@@ -71,7 +73,7 @@ impl ComponentHandler for VerifyDevForumRank<'_> {
         let devforum_data = match fetch_devforum_data(&state.request, &roblox_data.name).await {
             Ok(data) => data,
             Err(error) => {
-                tracing::warn!(%error);
+                tracing::warn!(?error);
                 return Ok(InteractionResponse {
                     kind: InteractionResponseType::ChannelMessageWithSource,
                     data: Some(
@@ -88,7 +90,7 @@ impl ComponentHandler for VerifyDevForumRank<'_> {
         if let Err(error) =
             update_user_roles(guild_id, author_id, &state, &devforum_data.user.trust_level).await
         {
-            tracing::error!(%error);
+            tracing::error!(?error);
             return Ok(InteractionResponse {
                 kind: InteractionResponseType::ChannelMessageWithSource,
                 data: Some(
@@ -132,22 +134,21 @@ async fn fetch_rover_data(
     guild_id: Id<GuildMarker>,
     discord_id: Id<UserMarker>,
 ) -> anyhow::Result<RoVerAPIResponse> {
-    let rover_response = request
+    let res = request
         .get(construct_rover_endpoint(guild_id, discord_id))
         .header(AUTHORIZATION, format!("Bearer {}", *ROVER_API_KEY))
         .send()
         .await
         .context("fetch rover data")?;
 
-    if rover_response.status().is_success() {
-        rover_response
-            .json::<RoVerAPIResponse>()
+    if res.status().is_success() {
+        res.json::<RoVerAPIResponse>()
             .await
             .context("parse rover data")
     } else {
         Err(anyhow::anyhow!(
             "Failed to fetch RoVer data for discord_id={discord_id} in guild_id={guild_id}, received status: {}",
-            rover_response.status()
+            res.status()
         ))
     }
 }
@@ -167,22 +168,21 @@ async fn fetch_roblox_data(
     roblox_id: u64,
 ) -> anyhow::Result<RobloxAPIResponse> {
     // Construct the Roblox API endpoint using the Roblox ID and make the request.
-    let roblox_response = request
+    let res = request
         .get(construct_roblox_endpoint(roblox_id))
         .send()
         .await
         .context("fetch roblox data")?;
 
     // Check if the response was successful and parse the JSON data.
-    if roblox_response.status().is_success() {
-        roblox_response
-            .json::<RobloxAPIResponse>()
+    if res.status().is_success() {
+        res.json::<RobloxAPIResponse>()
             .await
             .context("parse roblox data")
     } else {
         Err(anyhow::anyhow!(
             "Failed to fetch Roblox data for roblox_id={roblox_id}, received status: {}",
-            roblox_response.status()
+            res.status()
         ))
     }
 }
@@ -202,22 +202,21 @@ async fn fetch_devforum_data(
     roblox_username: &str,
 ) -> anyhow::Result<DevForumAPIResponse> {
     // Construct the DevForum API endpoint using the Roblox username and make the request.
-    let devforum_response = request
-        .get(construct_devforum_endpoint(roblox_username))
-        .send()
-        .await
-        .context("fetch devforum data")?;
+    let mut req = request.get(construct_devforum_endpoint(roblox_username));
+    if let Some(cookie) = &*DEVFORUM_COOKIE {
+        req = req.header(COOKIE, format!("_t={cookie}"));
+    }
+    let res = req.send().await.context("fetch devforum data")?;
 
     // Check if the response was successful and parse the JSON data.
-    if devforum_response.status().is_success() {
-        devforum_response
-            .json::<DevForumAPIResponse>()
+    if res.status().is_success() {
+        res.json::<DevForumAPIResponse>()
             .await
             .context("parse devforum data")
     } else {
         Err(anyhow::anyhow!(
             "Failed to fetch DevForum data for roblox_username={roblox_username}, received status: {}",
-            devforum_response.status()
+            res.status()
         ))
     }
 }
@@ -300,7 +299,7 @@ struct DevForumUser {
     trust_level: DevForumTrustLevel,
 }
 
-#[derive(Deserialize_repr)]
+#[derive(Deserialize_repr, Debug)]
 #[repr(u8)]
 enum DevForumTrustLevel {
     Visitor = 0,
