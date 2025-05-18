@@ -37,7 +37,7 @@ impl ComponentHandler for VerifyDevForumRank<'_> {
         let rover_data = match fetch_rover_data(&state.request, guild_id, author_id).await {
             Ok(data) => data,
             Err(error) => {
-                tracing::error!(?error);
+                tracing::warn!(%error);
                 return Ok(InteractionResponse {
                     kind: InteractionResponseType::ChannelMessageWithSource,
                     data: Some(
@@ -54,7 +54,7 @@ impl ComponentHandler for VerifyDevForumRank<'_> {
         let roblox_data = match fetch_roblox_data(&state.request, rover_data.roblox_id).await {
             Ok(data) => data,
             Err(error) => {
-                tracing::error!(?error);
+                tracing::warn!(%error);
                 return Ok(InteractionResponse {
                     kind: InteractionResponseType::ChannelMessageWithSource,
                     data: Some(
@@ -71,7 +71,7 @@ impl ComponentHandler for VerifyDevForumRank<'_> {
         let devforum_data = match fetch_devforum_data(&state.request, &roblox_data.name).await {
             Ok(data) => data,
             Err(error) => {
-                tracing::error!(?error);
+                tracing::warn!(%error);
                 return Ok(InteractionResponse {
                     kind: InteractionResponseType::ChannelMessageWithSource,
                     data: Some(
@@ -88,7 +88,7 @@ impl ComponentHandler for VerifyDevForumRank<'_> {
         if let Err(error) =
             update_user_roles(guild_id, author_id, &state, &devforum_data.user.trust_level).await
         {
-            tracing::error!(?error);
+            tracing::error!(%error);
             return Ok(InteractionResponse {
                 kind: InteractionResponseType::ChannelMessageWithSource,
                 data: Some(

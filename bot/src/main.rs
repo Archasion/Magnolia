@@ -87,7 +87,6 @@ async fn handle_event_wrapper(
     Ok(())
 }
 
-#[tracing::instrument(skip(state))]
 async fn handle_event(event: Event, state: State) -> anyhow::Result<()> {
     match event {
         Event::Ready(client) => {
