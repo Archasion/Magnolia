@@ -6,7 +6,8 @@ This is a simple Discord bot written in Rust using the [twilight-rs](https://git
 
 # Startup
 
-First, you need to create a `.env` file in the root directory of the project. See [`.env.example`](.env.example) for an example.
+First, you need to create a `.env` file in the root directory of the project. See [`.env.example`](./.env.example) for
+an example.
 
 Then, you can run the bot with the following command:
 
