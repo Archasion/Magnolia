@@ -5,6 +5,7 @@ use twilight_model::application::command::{Command, CommandType};
 use twilight_model::application::interaction::{Interaction, InteractionContextType};
 use twilight_model::channel::message::MessageFlags;
 use twilight_model::guild::Permissions;
+use twilight_model::http::attachment::Attachment;
 use twilight_model::http::interaction::{InteractionResponse, InteractionResponseType};
 use twilight_model::oauth::ApplicationIntegrationType;
 use twilight_util::builder::command::CommandBuilder;
@@ -35,8 +36,12 @@ impl CommandHandler for DevForumSelfRole<'_> {
     }
 
     async fn exec(&self, state: crate::State) -> anyhow::Result<InteractionResponse> {
-        let devforum_logo = ImageSource::attachment("assets/devforum-logo.png")
-            .context("resolve devforum logo path")?;
+        let devforum_logo_file = Attachment::from_bytes(
+            "devforum-logo.png".to_string(),
+            Vec::from(include_bytes!("../../../assets/devforum-logo.png")),
+            0,
+        );
+        let devforum_logo_thumbnail = ImageSource::attachment(&devforum_logo_file.filename)?;
         let info_embed = EmbedBuilder::new()
             .title("Developer Forum Member Role(s)")
             .description(format!(
@@ -49,7 +54,7 @@ impl CommandHandler for DevForumSelfRole<'_> {
             state.cfg.roles.devforum_member,
             state.cfg.roles.devforum_regular
             ))
-            .thumbnail(devforum_logo)
+            .thumbnail(devforum_logo_thumbnail)
             .build();
         let action_row = ActionRowBuilder::new()
             .set_components([VerifyDevForumRank::model()?])
@@ -62,6 +67,7 @@ impl CommandHandler for DevForumSelfRole<'_> {
             .create_message(channel_id)
             .embeds(&[info_embed])
             .components(&[action_row])
+            .attachments(&[devforum_logo_file])
             .await?;
 
         Ok(InteractionResponse {
