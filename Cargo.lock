@@ -359,7 +359,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b021d93e26becf5dc7e1b75b1bed1fd93124b374ceb73f43d4d4eafec896a64a"
 dependencies = [
  "bytes",
-    "futures-core",
+ "futures-core",
  "http",
  "http-body",
  "pin-project-lite",
@@ -421,7 +421,7 @@ dependencies = [
  "http",
  "http-body",
  "hyper",
-    "libc",
+ "libc",
  "pin-project-lite",
  "socket2",
  "tokio",
@@ -436,7 +436,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cea70ddb795996207ad57735b50c5982d8844f38ba9ee5f1aedcfb708a2aa11e"
 dependencies = [
  "equivalent",
-    "hashbrown 0.15.3",
+ "hashbrown 0.15.3",
 ]
 
 [[package]]
@@ -715,7 +715,7 @@ version = "1.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "229a4a4c221013e7e1f1a043678c5cc39fe5171437c88fb47151a21e6f5b5c79"
 dependencies = [
-    "zeroize",
+ "zeroize",
 ]
 
 [[package]]
@@ -735,8 +735,8 @@ dependencies = [
  "rustls-webpki",
  "security-framework",
  "security-framework-sys",
-    "webpki-root-certs 0.26.11",
-    "windows-sys 0.59.0",
+ "webpki-root-certs 0.26.11",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -1297,7 +1297,7 @@ version = "0.26.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "75c7f0ef91146ebfb530314f5f1d24528d7f0767efbfd31dce919275413e393e"
 dependencies = [
-    "webpki-root-certs 1.0.0",
+ "webpki-root-certs 1.0.0",
 ]
 
 [[package]]
