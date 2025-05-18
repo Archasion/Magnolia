@@ -1,18 +1,17 @@
 ![ci badge]
 
-# Discord Bot in Rust
+# Magnolia
 
-This is a simple Discord bot written in Rust using the [twilight-rs](https://github.com/twilight-rs/twilight) library.
+## Config
 
-# Startup
+A `magnolia.cfg.yml` file, or whatever path is passed as argument the first argument, is required at the root of the
+repository. This file contains the configuration for the bot.
+The following is an example of the file structure:
 
-First, you need to create a `.env` file in the root directory of the project. See [`.env.example`](./.env.example) for
-an example.
-
-Then, you can run the bot with the following command:
-
-```sh
-cargo run
+```yaml
+roles:
+  devforum_member: "ROLE_ID"
+  devforum_regular: "ROLE_ID"
 ```
 
 [ci badge]:https://img.shields.io/github/actions/workflow/status/archasion/discord-bot-rs/ci.yml?branch=main&event=push&label=CI
