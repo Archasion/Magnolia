@@ -72,7 +72,7 @@ async fn handle_event(event: Event, http: Arc<HttpClient>) -> anyhow::Result<()>
             );
 
             // Publish commands every time the bot starts
-            // to ensure they are always up-to-date.
+            // to ensure they are always up to date.
             let global_commands = http
                 .interaction(client.application.id)
                 .set_global_commands(commands::models()?.as_slice())

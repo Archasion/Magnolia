@@ -133,12 +133,12 @@ impl ModalBuilder {
     /// Ensure the modal is valid.
     fn validate(&self) -> anyhow::Result<()> {
         if let Some(title) = &self.0.title {
-            // Ensure title is not empty
+            // Ensure the title is not empty
             if title.is_empty() {
                 anyhow::bail!("Title must not be empty");
             }
 
-            // Ensure title does not exceed the maximum length
+            // Ensure the title does not exceed the maximum length
             if title.len() > MODAL_TITLE_LENGTH {
                 anyhow::bail!("Title must not exceed {} characters", MODAL_TITLE_LENGTH);
             }
