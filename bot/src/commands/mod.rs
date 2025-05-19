@@ -1,8 +1,6 @@
-use anyhow::Context;
 use async_trait::async_trait;
 use twilight_model::application::command::Command;
 use twilight_model::application::interaction::Interaction;
-use twilight_model::http::interaction::InteractionResponse;
 
 pub(crate) mod devforum_self_role;
 
@@ -17,20 +15,17 @@ pub(crate) trait CommandHandler: Send {
     fn model() -> anyhow::Result<Command>
     where
         Self: Sized;
-    async fn exec(&self, state: crate::State) -> anyhow::Result<InteractionResponse>;
+    async fn exec(&self, ctx: crate::Context) -> anyhow::Result<()>;
 }
 
 pub(crate) async fn handle_command(
-    interaction: &Interaction,
-    command_name: &str,
-    state: crate::State,
-) -> anyhow::Result<InteractionResponse> {
-    let handler: Box<dyn CommandHandler> = match command_name {
-        "devforum-self-role" => Box::new(devforum_self_role::DevForumSelfRole(interaction)),
+    cmd: &Interaction,
+    cmd_name: &str,
+    ctx: crate::Context,
+) -> anyhow::Result<()> {
+    let handler: Box<dyn CommandHandler> = match cmd_name {
+        "devforum-self-role" => Box::new(devforum_self_role::DevForumSelfRole { cmd }),
         unknown => anyhow::bail!("unknown command name: {}", unknown),
     };
-    handler
-        .exec(state)
-        .await
-        .with_context(|| format!("execute command: {command_name}"))
+    handler.exec(ctx).await
 }

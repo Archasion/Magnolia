@@ -6,7 +6,7 @@ mod modals;
 use std::env;
 use std::sync::Arc;
 
-use anyhow::Context;
+use anyhow::Context as _;
 use twilight_cache_inmemory::{DefaultInMemoryCache, ResourceType};
 use twilight_gateway::{Event, EventTypeFlags, Intents, Shard, ShardId, StreamExt as _};
 use twilight_http::Client as HttpClient;
@@ -15,7 +15,7 @@ use twilight_model::application::interaction::InteractionData;
 use crate::config::Config;
 
 #[derive(Clone)]
-pub(crate) struct State {
+pub(crate) struct Context {
     http: Arc<HttpClient>,
     cfg: Arc<Config>,
     request: Arc<reqwest::Client>,
@@ -48,7 +48,7 @@ async fn main() -> anyhow::Result<()> {
     let req_client = Arc::new(reqwest::Client::new());
 
     // Initialize the state.
-    let state = State {
+    let state = Context {
         http: http.clone(),
         cfg: cfg.clone(),
         request: req_client.clone(),
@@ -61,7 +61,7 @@ async fn main() -> anyhow::Result<()> {
 async fn handle_event_wrapper(
     mut shard: Shard,
     cache: DefaultInMemoryCache,
-    state: State,
+    state: Context,
 ) -> anyhow::Result<()> {
     // Process each event as they come in.
     while let Some(item) = shard
@@ -80,14 +80,13 @@ async fn handle_event_wrapper(
 
         // Update the cache with the event.
         cache.update(&event);
-
         tokio::spawn(handle_event(event, state.clone()));
     }
 
     Ok(())
 }
 
-async fn handle_event(event: Event, state: State) -> anyhow::Result<()> {
+async fn handle_event(event: Event, state: Context) -> anyhow::Result<()> {
     match event {
         Event::Ready(client) => {
             tracing::info!(
@@ -111,10 +110,11 @@ async fn handle_event(event: Event, state: State) -> anyhow::Result<()> {
             tracing::info!("published {} global commands", global_commands.len());
         },
         Event::InteractionCreate(interaction) => {
-            let response = match &interaction.data {
+            match &interaction.data {
                 Some(InteractionData::ApplicationCommand(command)) => {
                     commands::handle_command(&interaction.0, command.name.as_str(), state.clone())
                         .await
+                        .with_context(|| format!("handle command: {}", command.name))?;
                 },
                 Some(InteractionData::MessageComponent(component)) => {
                     components::handle_component(
@@ -123,6 +123,7 @@ async fn handle_event(event: Event, state: State) -> anyhow::Result<()> {
                         state.clone(),
                     )
                     .await
+                    .with_context(|| format!("handle component: {}", component.custom_id))?;
                 },
                 // Uncomment this when there is a modal to handle.
                 //
@@ -132,21 +133,6 @@ async fn handle_event(event: Event, state: State) -> anyhow::Result<()> {
                 // },
                 _ => anyhow::bail!("unsupported interaction type"),
             };
-
-            if let Ok(response) = response {
-                let e = state
-                    .http
-                    .interaction(interaction.application_id)
-                    .create_response(interaction.id, &interaction.token, &response)
-                    .await
-                    .err();
-
-                if let Some(e) = e {
-                    tracing::error!(?e, "error creating response for interaction");
-                }
-            } else {
-                tracing::warn!("no response generated for interaction");
-            }
         },
         _ => {},
     }

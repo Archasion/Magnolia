@@ -17,7 +17,9 @@ use crate::components::verify_devforum_rank::VerifyDevForumRank;
 use crate::components::ComponentHandler;
 
 #[allow(dead_code)]
-pub(crate) struct DevForumSelfRole<'a>(pub(crate) &'a Interaction);
+pub(crate) struct DevForumSelfRole<'a> {
+    pub(crate) cmd: &'a Interaction,
+}
 
 #[async_trait]
 impl CommandHandler for DevForumSelfRole<'_> {
@@ -35,42 +37,42 @@ impl CommandHandler for DevForumSelfRole<'_> {
         .build())
     }
 
-    async fn exec(&self, state: crate::State) -> anyhow::Result<InteractionResponse> {
-        let devforum_logo_file = Attachment::from_bytes(
+    async fn exec(&self, ctx: crate::Context) -> anyhow::Result<()> {
+        let devforum_logo = Attachment::from_bytes(
             "devforum-logo.png".to_string(),
             Vec::from(include_bytes!("../../../assets/devforum-logo.png")),
             0,
         );
-        let devforum_logo_thumbnail = ImageSource::attachment(&devforum_logo_file.filename)?;
         let info_embed = EmbedBuilder::new()
             .title("Developer Forum Member Role(s)")
             .description(format!(
-            "Click the `Update Roles` button below to claim your developer forum member role if you meet the eligibility criteria.
+                "Click the `Update Roles` button below to claim your developer forum member role if you meet the eligibility criteria.
 
 - <@&{}> - Your **trust level** on the Roblox developer forum is `Member` (not to be confused with `Visitor`)
 - <@&{}> - Your **trust level** on the Roblox developer forum is `Regular`
 - What is the developer forum? [**Learn more**](https://help.roblox.com/hc/articles/360000240223)
 - How do I \"level up\"? [**Learn more**](https://devforum.roblox.com/t/3170997)",
-            state.cfg.roles.devforum_member,
-            state.cfg.roles.devforum_regular
+                ctx.cfg.roles.devforum_member,
+                ctx.cfg.roles.devforum_regular
             ))
-            .thumbnail(devforum_logo_thumbnail)
+            .thumbnail(ImageSource::attachment(&devforum_logo.filename)?)
             .build();
         let action_row = ActionRowBuilder::new()
             .set_components([VerifyDevForumRank::model()?])
             .build()
             .context("build action row")?;
 
-        let channel_id = self.0.channel.as_ref().context("get channel id")?.id;
-        state
-            .http
+        // Send the embed to the channel
+        let channel_id = self.cmd.channel.as_ref().context("get channel id")?.id;
+        ctx.http
             .create_message(channel_id)
             .embeds(&[info_embed])
             .components(&[action_row])
-            .attachments(&[devforum_logo_file])
+            .attachments(&[devforum_logo])
             .await?;
 
-        Ok(InteractionResponse {
+        // Create the interaction response
+        let response = InteractionResponse {
             kind: InteractionResponseType::ChannelMessageWithSource,
             data: Some(
                 InteractionResponseDataBuilder::new()
@@ -78,6 +80,15 @@ impl CommandHandler for DevForumSelfRole<'_> {
                     .flags(MessageFlags::EPHEMERAL)
                     .build(),
             ),
-        })
+        };
+
+        // Respond to the interaction ephemerally
+        ctx.http
+            .interaction(self.cmd.application_id)
+            .create_response(self.cmd.id, &self.cmd.token, &response)
+            .await
+            .context("create response")?;
+
+        Ok(())
     }
 }

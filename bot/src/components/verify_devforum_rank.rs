@@ -16,7 +16,9 @@ use twilight_util::builder::InteractionResponseDataBuilder;
 
 use crate::components::ComponentHandler;
 
-pub(crate) struct VerifyDevForumRank<'a>(pub(crate) &'a Interaction);
+pub(crate) struct VerifyDevForumRank<'a> {
+    pub(crate) cmd: &'a Interaction,
+}
 
 static ROVER_API_KEY: LazyLock<String> =
     LazyLock::new(|| std::env::var("ROVER_API_KEY").expect("ROVER_API_KEY must be set"));
@@ -31,90 +33,79 @@ impl ComponentHandler for VerifyDevForumRank<'_> {
             .build()
     }
 
-    async fn exec(&self, state: crate::State) -> anyhow::Result<InteractionResponse> {
-        let guild_id = self.0.guild_id.context("get guild id")?;
-        let author_id = self.0.author_id().context("get interaction author id")?;
+    async fn exec(&self, ctx: crate::Context) -> anyhow::Result<()> {
+        let guild_id = self.cmd.guild_id.context("get guild id")?;
+        let author_id = self.cmd.author_id().context("get interaction author id")?;
 
-        // Get the user's Roblox ID using their Discord ID from the RoVer verification API.
-        let rover_data = match fetch_rover_data(&state.request, guild_id, author_id).await {
-            Ok(data) => data,
-            Err(error) => {
-                tracing::warn!(?error);
-                return Ok(InteractionResponse {
-                    kind: InteractionResponseType::ChannelMessageWithSource,
-                    data: Some(
-                        InteractionResponseDataBuilder::new()
-                            .content("Failed to fetch your RoVer data.")
-                            .flags(MessageFlags::EPHEMERAL)
-                            .build(),
-                    ),
-                });
-            },
-        };
-
-        // Get the user's Roblox username using their Roblox ID from the Roblox API.
-        let roblox_data = match fetch_roblox_data(&state.request, rover_data.roblox_id).await {
-            Ok(data) => data,
-            Err(error) => {
-                tracing::warn!(?error);
-                return Ok(InteractionResponse {
-                    kind: InteractionResponseType::ChannelMessageWithSource,
-                    data: Some(
-                        InteractionResponseDataBuilder::new()
-                            .content("Failed to fetch your Roblox username.")
-                            .flags(MessageFlags::EPHEMERAL)
-                            .build(),
-                    ),
-                });
-            },
-        };
-
-        // Get the user's trust level using their Roblox username from the DevForum API.
-        let devforum_data = match fetch_devforum_data(&state.request, &roblox_data.name).await {
-            Ok(data) => data,
-            Err(error) => {
-                tracing::warn!(?error);
-                return Ok(InteractionResponse {
-                    kind: InteractionResponseType::ChannelMessageWithSource,
-                    data: Some(
-                        InteractionResponseDataBuilder::new()
-                            .content("Failed to fetch your DevForum data.")
-                            .flags(MessageFlags::EPHEMERAL)
-                            .build(),
-                    ),
-                });
-            },
-        };
-
-        // Update the user's roles in the Discord server based on their trust level.
-        if let Err(error) =
-            update_user_roles(guild_id, author_id, &state, &devforum_data.user.trust_level).await
-        {
-            tracing::error!(?error);
-            return Ok(InteractionResponse {
-                kind: InteractionResponseType::ChannelMessageWithSource,
+        // Defer the interaction response
+        ctx.http
+            .interaction(self.cmd.application_id)
+            .create_response(self.cmd.id, &self.cmd.token, &InteractionResponse {
+                kind: InteractionResponseType::DeferredChannelMessageWithSource,
                 data: Some(
                     InteractionResponseDataBuilder::new()
-                        .content("Failed to update your roles.")
                         .flags(MessageFlags::EPHEMERAL)
                         .build(),
                 ),
-            });
-        }
+            })
+            .await
+            .context("defer interaction response")?;
 
-        // Send a success message to the user.
-        Ok(InteractionResponse {
-            kind: InteractionResponseType::ChannelMessageWithSource,
-            data: Some(
-                InteractionResponseDataBuilder::new()
-                    .content(format!(
-                        "Successfully updated your roles to match your DevForum trust level: `{}`",
-                        devforum_data.user.trust_level
-                    ))
-                    .flags(MessageFlags::EPHEMERAL)
-                    .build(),
-            ),
-        })
+        // Respond to the interaction
+        let response = get_response_content(&ctx, guild_id, author_id).await;
+        ctx.http
+            .interaction(self.cmd.application_id)
+            .update_response(&self.cmd.token)
+            .content(Some(&response))
+            .await
+            .context("edit interaction response")?;
+
+        Ok(())
+    }
+}
+
+async fn get_response_content(
+    ctx: &crate::Context,
+    guild_id: Id<GuildMarker>,
+    author_id: Id<UserMarker>,
+) -> String {
+    // Get the user's Roblox ID using their Discord ID from the RoVer verification API.
+    let rover_data = match fetch_rover_data(&ctx.request, guild_id, author_id).await {
+        Ok(data) => data,
+        Err(error) => {
+            tracing::warn!(?error);
+            return "Failed to fetch your RoVer data.".to_string();
+        },
+    };
+
+    // Get the user's Roblox username using their Roblox ID from the Roblox API.
+    let roblox_data = match fetch_roblox_data(&ctx.request, rover_data.roblox_id).await {
+        Ok(data) => data,
+        Err(error) => {
+            tracing::warn!(?error);
+            return "Failed to fetch your Roblox username.".to_string();
+        },
+    };
+
+    // Get the user's trust level using their Roblox username from the DevForum API.
+    let devforum_data = match fetch_devforum_data(&ctx.request, &roblox_data.name).await {
+        Ok(data) => data,
+        Err(error) => {
+            tracing::warn!(?error);
+            return "Failed to fetch your DevForum data.".to_string();
+        },
+    };
+
+    // Update the user's roles in the Discord server based on their trust level.
+    match update_user_roles(guild_id, author_id, ctx, &devforum_data.user.trust_level).await {
+        Ok(()) => format!(
+            "Successfully updated your roles to match your DevForum trust level: `{}`",
+            devforum_data.user.trust_level
+        ),
+        Err(error) => {
+            tracing::error!(?error);
+            "Failed to update your roles.".to_string()
+        },
     }
 }
 
@@ -232,10 +223,11 @@ async fn fetch_devforum_data(
 async fn update_user_roles(
     guild_id: Id<GuildMarker>,
     user_id: Id<UserMarker>,
-    state: &crate::State,
+    state: &crate::Context,
     trust_level: &DevForumTrustLevel,
 ) -> anyhow::Result<()> {
     let roles = trust_level.roles(&state.cfg);
+    // Get the current roles of the user in the guild
     let mut member_roles = state
         .http
         .guild_member(guild_id, user_id)
@@ -245,14 +237,17 @@ async fn update_user_roles(
         .await?
         .roles;
 
+    // Remove the roles that are no longer applicable
     member_roles.retain(|role_id| !roles.remove.contains(role_id));
 
+    // Add the role if it is not already present
     if let Some(role_id) = roles.add {
         if !member_roles.contains(&role_id) {
             member_roles.push(role_id);
         }
     }
 
+    // Update the guild member with the new roles
     state
         .http
         .update_guild_member(guild_id, user_id)
