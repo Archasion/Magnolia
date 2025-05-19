@@ -56,7 +56,7 @@ impl ComponentHandler for VerifyDevForumRank<'_> {
                         data: Some(
                             InteractionResponseDataBuilder::new()
                                 .flags(MessageFlags::EPHEMERAL)
-                                .content("You must be Roblox verified to use this command.")
+                                .content("You must be verified to use this interaction.")
                                 .build(),
                         ),
                     })
@@ -81,7 +81,7 @@ impl ComponentHandler for VerifyDevForumRank<'_> {
             .context("defer interaction response")?;
 
         // Respond to the interaction
-        let response = get_response_content(&ctx, guild_id, author_id).await;
+        let response = get_response_content(&ctx, guild_id, author_id, member_roles).await;
         ctx.http
             .interaction(self.cmd.application_id)
             .update_response(&self.cmd.token)
@@ -97,6 +97,7 @@ async fn get_response_content(
     ctx: &crate::Context,
     guild_id: Id<GuildMarker>,
     author_id: Id<UserMarker>,
+    member_roles: Vec<Id<RoleMarker>>,
 ) -> String {
     // Get the user's Roblox ID using their Discord ID from the RoVer verification API.
     let rover_data = match fetch_rover_data(&ctx.request, guild_id, author_id).await {
@@ -126,7 +127,15 @@ async fn get_response_content(
     };
 
     // Update the user's roles in the Discord server based on their trust level.
-    match update_user_roles(guild_id, author_id, ctx, &devforum_data.user.trust_level).await {
+    match update_user_roles(
+        guild_id,
+        author_id,
+        ctx,
+        &devforum_data.user.trust_level,
+        member_roles,
+    )
+    .await
+    {
         Ok(()) => format!(
             "Successfully updated your roles to match your DevForum trust level: `{}`",
             devforum_data.user.trust_level
@@ -254,18 +263,9 @@ async fn update_user_roles(
     user_id: Id<UserMarker>,
     state: &crate::Context,
     trust_level: &DevForumTrustLevel,
+    mut member_roles: Vec<Id<RoleMarker>>,
 ) -> anyhow::Result<()> {
     let roles = trust_level.roles(&state.cfg);
-    // Get the current roles of the user in the guild
-    let mut member_roles = state
-        .http
-        .guild_member(guild_id, user_id)
-        .await
-        .context("get guild member")?
-        .model()
-        .await?
-        .roles;
-
     // Remove the roles that are no longer applicable
     member_roles.retain(|role_id| !roles.remove.contains(role_id));
 
