@@ -36,8 +36,37 @@ impl ComponentHandler for VerifyDevForumRank<'_> {
     async fn exec(&self, ctx: crate::Context) -> anyhow::Result<()> {
         let guild_id = self.cmd.guild_id.context("get guild id")?;
         let author_id = self.cmd.author_id().context("get interaction author id")?;
+        let member_roles = ctx
+            .http
+            .guild_member(guild_id, author_id)
+            .await
+            .context("get guild member")?
+            .model()
+            .await?
+            .roles;
 
-        // Defer the interaction response
+        // Respond early if the user doesn't have the verified role
+        // this is a quick check to avoid unnecessary API calls
+        if let Some(r_id) = ctx.cfg.roles.roblox_verified {
+            if !member_roles.contains(&r_id) {
+                ctx.http
+                    .interaction(self.cmd.application_id)
+                    .create_response(self.cmd.id, &self.cmd.token, &InteractionResponse {
+                        kind: InteractionResponseType::ChannelMessageWithSource,
+                        data: Some(
+                            InteractionResponseDataBuilder::new()
+                                .flags(MessageFlags::EPHEMERAL)
+                                .content("You must be Roblox verified to use this command.")
+                                .build(),
+                        ),
+                    })
+                    .await
+                    .context("respond to interaction")?;
+                return Ok(());
+            }
+        }
+
+        // Defer the interaction response since the API calls may take some time
         ctx.http
             .interaction(self.cmd.application_id)
             .create_response(self.cmd.id, &self.cmd.token, &InteractionResponse {

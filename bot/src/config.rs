@@ -12,6 +12,7 @@ pub(crate) struct Config {
 pub(crate) struct ConfigRoles {
     pub(crate) devforum_member: Id<RoleMarker>,
     pub(crate) devforum_regular: Id<RoleMarker>,
+    pub(crate) roblox_verified: Option<Id<RoleMarker>>,
 }
 
 #[tracing::instrument(ret)]
