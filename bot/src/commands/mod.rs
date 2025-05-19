@@ -2,6 +2,7 @@ use async_trait::async_trait;
 use twilight_model::application::command::Command;
 use twilight_model::application::interaction::Interaction;
 
+mod config;
 mod devforum_self_role;
 mod faq;
 
@@ -9,6 +10,7 @@ mod faq;
 pub(crate) fn models(ctx: crate::Context) -> anyhow::Result<Vec<Command>> {
     Ok(vec![
         devforum_self_role::DevForumSelfRole::model(None)?,
+        config::Config::model(None)?,
         faq::Faq::model(Some(ctx))?,
     ])
 }
@@ -29,6 +31,7 @@ pub(crate) async fn handle_command(
 ) -> anyhow::Result<()> {
     let handler: Box<dyn CommandHandler> = match cmd_name {
         "devforum-self-role" => Box::new(devforum_self_role::DevForumSelfRole { cmd }),
+        "config" => Box::new(config::Config { cmd }),
         "faq" => Box::new(faq::Faq { cmd }),
         unknown => anyhow::bail!("unknown command name: {}", unknown),
     };
