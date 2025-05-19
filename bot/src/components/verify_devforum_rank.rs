@@ -231,11 +231,19 @@ async fn fetch_devforum_data(
     roblox_username: &str,
 ) -> anyhow::Result<DevForumAPIResponse> {
     // Construct the DevForum API endpoint using the Roblox username and make the request.
-    let mut req = request.get(construct_devforum_endpoint(roblox_username));
-    if let Some(cookie) = &*DEVFORUM_COOKIE {
-        req = req.header(COOKIE, format!("_t={cookie}"));
+    let mut res = request
+        .get(construct_devforum_endpoint(roblox_username))
+        .send()
+        .await?;
+
+    if res.status().is_client_error() && DEVFORUM_COOKIE.is_some() {
+        // Retry the request with the DevForum cookie if the first attempt fails
+        res = request
+            .get(construct_devforum_endpoint(roblox_username))
+            .header(COOKIE, format!("_t={}", *DEVFORUM_COOKIE.as_ref().unwrap()))
+            .send()
+            .await?;
     }
-    let res = req.send().await.context("fetch devforum data")?;
 
     // Check if the response was successful and parse the JSON data.
     if res.status().is_success() {
