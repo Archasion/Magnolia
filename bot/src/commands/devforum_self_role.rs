@@ -23,7 +23,7 @@ pub(crate) struct DevForumSelfRole<'a> {
 
 #[async_trait]
 impl CommandHandler for DevForumSelfRole<'_> {
-    fn model() -> anyhow::Result<Command> {
+    fn model(_ctx: Option<crate::Context>) -> anyhow::Result<Command> {
         Ok(CommandBuilder::new(
             "devforum-self-role",
             "Send an info embed with a button to self-update DevForum roles.",

@@ -86,8 +86,8 @@ async fn handle_event_wrapper(
     Ok(())
 }
 
-async fn handle_event(event: Event, state: Context) -> anyhow::Result<()> {
-    match event {
+async fn handle_event(event: Event, ctx: Context) -> anyhow::Result<()> {
+    let res: anyhow::Result<()> = match event {
         Event::Ready(client) => {
             tracing::info!(
                 "the client has logged in as @{} ({})",
@@ -97,10 +97,10 @@ async fn handle_event(event: Event, state: Context) -> anyhow::Result<()> {
 
             // Publish commands every time the bot starts
             // to ensure they are always up to date.
-            let global_commands = state
+            let global_commands = ctx
                 .http
                 .interaction(client.application.id)
-                .set_global_commands(commands::models()?.as_slice())
+                .set_global_commands(commands::models(ctx.clone())?.as_slice())
                 .await
                 .context("publish global commands")?
                 .models()
@@ -108,11 +108,12 @@ async fn handle_event(event: Event, state: Context) -> anyhow::Result<()> {
                 .context("get global commands")?;
 
             tracing::info!("published {} global commands", global_commands.len());
+            Ok(())
         },
         Event::InteractionCreate(interaction) => {
             match &interaction.data {
                 Some(InteractionData::ApplicationCommand(command)) => {
-                    commands::handle_command(&interaction.0, command.name.as_str(), state.clone())
+                    commands::handle_command(&interaction.0, command.name.as_str(), ctx.clone())
                         .await
                         .with_context(|| format!("handle command: {}", command.name))?;
                 },
@@ -120,7 +121,7 @@ async fn handle_event(event: Event, state: Context) -> anyhow::Result<()> {
                     components::handle_component(
                         &interaction.0,
                         component.custom_id.as_str(),
-                        state.clone(),
+                        ctx.clone(),
                     )
                     .await
                     .with_context(|| format!("handle component: {}", component.custom_id))?;
@@ -133,8 +134,13 @@ async fn handle_event(event: Event, state: Context) -> anyhow::Result<()> {
                 // },
                 _ => anyhow::bail!("unsupported interaction type"),
             };
+            Ok(())
         },
-        _ => {},
+        _ => Ok(()),
+    };
+
+    if let Err(err) = res {
+        tracing::error!(source = ?err, "error handling event");
     }
 
     Ok(())

@@ -2,3 +2,4 @@
 .idea
 .env
 magnolia.cfg.yml
+magnolia.cfg.*.yml
