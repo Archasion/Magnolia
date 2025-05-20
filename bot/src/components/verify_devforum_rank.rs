@@ -230,31 +230,39 @@ async fn fetch_devforum_data(
     request: &reqwest::Client,
     roblox_username: &str,
 ) -> anyhow::Result<DevForumAPIResponse> {
-    // Construct the DevForum API endpoint using the Roblox username and make the request.
-    let mut res = request
-        .get(construct_devforum_endpoint(roblox_username))
+    let endpoint = construct_devforum_endpoint(roblox_username);
+
+    // Attempt request without the cookie first
+    let res = request.get(&endpoint).send().await?;
+    if res.status().is_success() {
+        if let Ok(data) = res.json::<DevForumAPIResponse>().await {
+            return Ok(data);
+        }
+    }
+
+    // Return early if the cookie is not set
+    if DEVFORUM_COOKIE.is_none() {
+        anyhow::bail!(
+            "Failed to fetch DevForum data for roblox_username={roblox_username} without cookie"
+        )
+    }
+
+    // If the request fails, try again with the cookie
+    let res = request
+        .get(endpoint)
+        .header(COOKIE, format!("_t={}", *DEVFORUM_COOKIE.as_ref().unwrap()))
         .send()
         .await?;
 
-    if res.status().is_client_error() && DEVFORUM_COOKIE.is_some() {
-        // Retry the request with the DevForum cookie if the first attempt fails
-        res = request
-            .get(construct_devforum_endpoint(roblox_username))
-            .header(COOKIE, format!("_t={}", *DEVFORUM_COOKIE.as_ref().unwrap()))
-            .send()
-            .await?;
-    }
-
-    // Check if the response was successful and parse the JSON data.
     if res.status().is_success() {
         res.json::<DevForumAPIResponse>()
             .await
-            .context("parse devforum data")
+            .context("parse devforum data with cookie")
     } else {
-        Err(anyhow::anyhow!(
-            "Failed to fetch DevForum data for roblox_username={roblox_username}, received status: {}",
+        anyhow::bail!(
+            "Failed to fetch DevForum data for roblox_username={roblox_username} with cookie, received status: {}",
             res.status()
-        ))
+        )
     }
 }
 
