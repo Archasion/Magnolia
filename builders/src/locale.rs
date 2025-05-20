@@ -1,0 +1,81 @@
+use std::fmt::Display;
+
+/// Represents locales supported by the API.
+/// See the [API docs](https://discord.com/developers/docs/reference#locales) for more information.
+#[derive(Debug)]
+pub enum Locale {
+    Indonesian,
+    Danish,
+    German,
+    EnglishUK,
+    EnglishUS,
+    Spanish,
+    SpanishLATAM,
+    French,
+    Croatian,
+    Italian,
+    Lithuanian,
+    Hungarian,
+    Dutch,
+    Norwegian,
+    Polish,
+    PortugueseBrazilian,
+    RomanianRomania,
+    Finnish,
+    Swedish,
+    Vietnamese,
+    Turkish,
+    Czech,
+    Greek,
+    Bulgarian,
+    Russian,
+    Ukrainian,
+    Hindi,
+    Thai,
+    ChineseChina,
+    Japanese,
+    ChineseTaiwan,
+    Korean,
+    Other(String),
+}
+
+impl Display for Locale {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let str = match self {
+            Locale::Indonesian => "id",
+            Locale::Danish => "da",
+            Locale::German => "de",
+            Locale::EnglishUK => "en-GB",
+            Locale::EnglishUS => "en-US",
+            Locale::Spanish => "es-ES",
+            Locale::SpanishLATAM => "es-419",
+            Locale::French => "fr",
+            Locale::Croatian => "hr",
+            Locale::Italian => "it",
+            Locale::Lithuanian => "lt",
+            Locale::Hungarian => "hu",
+            Locale::Dutch => "nl",
+            Locale::Norwegian => "no",
+            Locale::Polish => "pl",
+            Locale::PortugueseBrazilian => "pt-BR",
+            Locale::RomanianRomania => "ro",
+            Locale::Finnish => "fi",
+            Locale::Swedish => "sv-SE",
+            Locale::Vietnamese => "vi",
+            Locale::Turkish => "tr",
+            Locale::Czech => "cs",
+            Locale::Greek => "el",
+            Locale::Bulgarian => "bg",
+            Locale::Russian => "ru",
+            Locale::Ukrainian => "uk",
+            Locale::Hindi => "hi",
+            Locale::Thai => "th",
+            Locale::ChineseChina => "zh-CN",
+            Locale::Japanese => "ja",
+            Locale::ChineseTaiwan => "zh-TW",
+            Locale::Korean => "ko",
+            Locale::Other(lang) => lang,
+        };
+        write!(f, "{str}")
+    }
+}

@@ -5,8 +5,9 @@ use regex::Regex;
 use twilight_model::application::command::{CommandOption, CommandOptionChoice, CommandOptionType};
 use twilight_model::channel::ChannelType;
 
+use crate::locale::Locale;
+
 const DESCRIPTION_LENGTH: usize = 100;
-const NAME_LENGTH: usize = 32;
 const CHOICE_COUNT: usize = 25;
 const OPTION_COUNT: usize = 25;
 const MAX_LENGTH: u16 = 6000;
@@ -69,21 +70,43 @@ impl CommandOptionBuilder {
         self
     }
 
+    /// Add a choice to the option.
+    pub fn choice(mut self, choice: CommandOptionChoice) -> Self {
+        if let Some(choices) = self.0.choices.as_mut() {
+            choices.push(choice);
+        } else {
+            self.0.choices = Some(vec![choice]);
+        }
+        self
+    }
+
     /// Set the description localizations for the option.
-    pub fn description_localizations<I>(mut self, localizations: I) -> Self
+    pub fn description_localizations<I, S>(mut self, localizations: I) -> Self
     where
-        I: IntoIterator<Item = (String, String)>,
+        I: IntoIterator<Item = (Locale, S)>,
+        S: Into<String>,
     {
-        self.0.description_localizations = Some(localizations.into_iter().collect());
+        self.0.description_localizations = Some(
+            localizations
+                .into_iter()
+                .map(|(k, v)| (k.to_string(), v.into()))
+                .collect(),
+        );
         self
     }
 
     /// Set the name localizations for the option.
-    pub fn name_localizations<I>(mut self, localizations: I) -> Self
+    pub fn name_localizations<I, S>(mut self, localizations: I) -> Self
     where
-        I: IntoIterator<Item = (String, String)>,
+        I: IntoIterator<Item = (Locale, S)>,
+        S: Into<String>,
     {
-        self.0.name_localizations = Some(localizations.into_iter().collect());
+        self.0.name_localizations = Some(
+            localizations
+                .into_iter()
+                .map(|(k, v)| (k.to_string(), v.into()))
+                .collect(),
+        );
         self
     }
 
@@ -93,6 +116,16 @@ impl CommandOptionBuilder {
         I: IntoIterator<Item = CommandOption>,
     {
         self.0.options = Some(options.into_iter().collect());
+        self
+    }
+
+    /// Add an option to the option.
+    pub fn option(mut self, option: CommandOption) -> Self {
+        if let Some(options) = self.0.options.as_mut() {
+            options.push(option);
+        } else {
+            self.0.options = Some(vec![option]);
+        }
         self
     }
 
@@ -118,19 +151,22 @@ impl CommandOptionBuilder {
 
     /// Validate the option.
     fn validate(&self) -> anyhow::Result<()> {
-        // Ensure the name is not empty
-        if self.0.name.is_empty() {
-            anyhow::bail!("Name must not be empty");
-        }
-
-        // Ensure the name does not exceed the maximum length
-        if self.0.name.len() > NAME_LENGTH {
-            anyhow::bail!("Name must not exceed 32 characters");
-        }
-
         // Ensure the name matches the regex pattern
         if !NAME_REGEX.is_match(&self.0.name) {
             anyhow::bail!("Name must match the regex pattern: {}", NAME_REGEX.as_str());
+        }
+
+        // Ensure each name localization matches the regex pattern
+        if let Some(name_l10n) = &self.0.name_localizations {
+            for (locale, name) in name_l10n {
+                if !NAME_REGEX.is_match(name) {
+                    anyhow::bail!(
+                        "Name localization for {} must match the regex pattern: {}",
+                        locale,
+                        NAME_REGEX.as_str()
+                    );
+                }
+            }
         }
 
         // Ensure the description is not empty
@@ -141,6 +177,22 @@ impl CommandOptionBuilder {
         // Ensure the description does not exceed the maximum length
         if self.0.description.len() > DESCRIPTION_LENGTH {
             anyhow::bail!("Description must not exceed 100 characters");
+        }
+
+        // Ensure each description localization does not exceed the maximum length
+        // and is not empty
+        if let Some(description_l10n) = &self.0.description_localizations {
+            for (locale, description) in description_l10n {
+                if description.is_empty() {
+                    anyhow::bail!("Description localization for {} must not be empty", locale);
+                }
+                if description.len() > DESCRIPTION_LENGTH {
+                    anyhow::bail!(
+                        "Description localization for {} must not exceed 100 characters",
+                        locale
+                    );
+                }
+            }
         }
 
         // Ensure 'required' is not set for types that don't support it
@@ -176,6 +228,17 @@ impl CommandOptionBuilder {
             // Ensure the number of options does not exceed the maximum
             if options.len() > OPTION_COUNT {
                 anyhow::bail!("Option must not have more than {} options", OPTION_COUNT);
+            }
+            // Ensure none of the options are SUB_COMMAND_GROUP (or SUB_COMMAND if the parent isn't a group)
+            for option in options {
+                if option.kind == CommandOptionType::SubCommandGroup {
+                    anyhow::bail!("Option must not have SUB_COMMAND_GROUP as a child");
+                }
+                if option.kind == CommandOptionType::SubCommand
+                    && self.0.kind != CommandOptionType::SubCommandGroup
+                {
+                    anyhow::bail!("Option must not have SUB_COMMAND as a child of a group");
+                }
             }
         }
 
@@ -270,28 +333,27 @@ mod tests {
     };
 
     use crate::command_option::CommandOptionBuilder;
+    use crate::locale::Locale;
 
     #[test]
     fn command_option() {
         let option =
             CommandOptionBuilder::new("test-name", "Test description", CommandOptionType::String)
-                .description_localizations(vec![(
-                    "en-US".to_string(),
-                    "Test description".to_string(),
-                )])
-                .name_localizations(vec![("en-US".to_string(), "test-name".to_string())])
-                .choices(vec![
-                    CommandOptionChoice {
-                        name: "Choice 1".to_string(),
-                        value: CommandOptionChoiceValue::Integer(1),
-                        name_localizations: None,
-                    },
-                    CommandOptionChoice {
-                        name: "Choice 2".to_string(),
-                        value: CommandOptionChoiceValue::String("Value".into()),
-                        name_localizations: None,
-                    },
-                ])
+                .description_localizations([(Locale::EnglishUS, "Test description")])
+                .name_localizations([(Locale::EnglishUS, "test-name")])
+                .choices([CommandOptionChoice {
+                    name: "Choice 1".to_string(),
+                    value: CommandOptionChoiceValue::Integer(1),
+                    name_localizations: None,
+                }])
+                .choice(CommandOptionChoice {
+                    name: "Choice 2".to_string(),
+                    value: CommandOptionChoiceValue::String("Value".into()),
+                    name_localizations: None,
+                })
+                .min_length(10)
+                .max_length(100)
+                .required(true)
                 .build()
                 .unwrap();
 
@@ -319,5 +381,8 @@ mod tests {
             option.name_localizations.as_ref().unwrap()["en-US"],
             "test-name"
         );
+        assert_eq!(option.min_length, Some(10));
+        assert_eq!(option.max_length, Some(100));
+        assert_eq!(option.required, Some(true));
     }
 }
