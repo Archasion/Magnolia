@@ -19,6 +19,7 @@ use twilight_util::builder::command::CommandBuilder;
 use twilight_util::builder::InteractionResponseDataBuilder;
 
 use crate::commands::CommandHandler;
+use crate::config::config_path;
 
 #[allow(dead_code)]
 pub(crate) struct Config<'a> {
@@ -83,7 +84,7 @@ impl CommandHandler for Config<'_> {
             },
             FileType::Yaml => {
                 // Get the raw content of the config file
-                let content = include_bytes!("../../../magnolia.cfg.yml").to_vec();
+                let content = std::fs::read(config_path())?;
                 Attachment::from_bytes("magnolia.cfg.yml".to_string(), content, 0)
             },
         };

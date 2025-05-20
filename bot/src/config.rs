@@ -60,10 +60,15 @@ impl Config {
 
 /// Loads the configuration from a YAML file.
 #[tracing::instrument(ret)]
-pub(crate) fn load_config<S>(path: S) -> Result<Config, anyhow::Error>
-where
-    S: AsRef<str> + std::fmt::Debug,
-{
-    let cfg_yaml = std::fs::read_to_string(path.as_ref()).context("read config file")?;
-    serde_yaml::from_str(&cfg_yaml).context("parse config file")
+pub(crate) fn load_config() -> Result<Config, anyhow::Error> {
+    let cfg_yaml = std::fs::read(config_path()).context("read config file")?;
+    serde_yaml::from_slice(&cfg_yaml).context("parse config file")
+}
+
+/// Parses the config file path from command line arguments
+/// or defaults to "magnolia.cfg.yml".
+pub(crate) fn config_path() -> String {
+    std::env::args()
+        .nth(1)
+        .unwrap_or_else(|| "magnolia.cfg.yml".to_string())
 }

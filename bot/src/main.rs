@@ -41,10 +41,7 @@ async fn main() -> anyhow::Result<()> {
         .build();
 
     // Parse the config file.
-    let cfg_path = env::args()
-        .nth(1)
-        .unwrap_or_else(|| "magnolia.cfg.yml".to_string());
-    let cfg = Arc::new(config::load_config(cfg_path)?);
+    let cfg = Arc::new(config::load_config()?);
     let req_client = Arc::new(reqwest::Client::new());
 
     // Initialize the state.
