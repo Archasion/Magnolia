@@ -238,6 +238,11 @@ async fn fetch_devforum_data(
         if let Ok(data) = res.json::<DevForumAPIResponse>().await {
             return Ok(data);
         }
+    } else {
+        anyhow::bail!(
+            "Failed to fetch DevForum data for roblox_username={roblox_username} without cookie, received status: {}",
+            res.status()
+        )
     }
 
     // Return early if the cookie is not set
