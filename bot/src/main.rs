@@ -3,7 +3,6 @@ mod components;
 mod config;
 mod modals;
 
-use std::env;
 use std::sync::Arc;
 
 use anyhow::Context as _;
@@ -21,12 +20,28 @@ pub(crate) struct Context {
     request: Arc<reqwest::Client>,
 }
 
+fn validate_config() -> anyhow::Result<()> {
+    let path = std::env::args()
+        .nth(2)
+        .unwrap_or_else(|| "magnolia.cfg.yml".to_string());
+    config::load_config(path)?;
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     // Initialize the tracing subscriber.
     tracing_subscriber::fmt::init();
 
-    let token = env::var("DISCORD_TOKEN").context("get DISCORD_TOKEN env")?;
+    // Validate the config file.
+    if let Some(arg) = std::env::args().nth(1) {
+        if arg == "validate-config" {
+            validate_config()?;
+            return Ok(());
+        }
+    }
+
+    let token = std::env::var("DISCORD_TOKEN").context("get DISCORD_TOKEN env")?;
 
     // Use intents to only receive guild message events.
     let shard = Shard::new(ShardId::ONE, token.clone(), Intents::empty());
@@ -41,7 +56,7 @@ async fn main() -> anyhow::Result<()> {
         .build();
 
     // Parse the config file.
-    let cfg = Arc::new(config::load_config()?);
+    let cfg = Arc::new(config::load_config(config::config_path())?);
     let req_client = Arc::new(reqwest::Client::new());
 
     // Initialize the state.

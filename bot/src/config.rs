@@ -1,7 +1,7 @@
 use anyhow::Context;
 use serde::Deserialize;
 use twilight_model::application::command::{CommandOptionChoice, CommandOptionChoiceValue};
-use twilight_model::channel::message::Embed;
+use twilight_model::http::interaction::InteractionResponseData;
 use twilight_model::id::marker::RoleMarker;
 use twilight_model::id::Id;
 
@@ -24,13 +24,16 @@ pub(crate) struct RoleConfig {
 
 /// Configuration for an option of the FAQ command.
 #[derive(Deserialize, Debug)]
-struct FaqOption {
+pub(crate) struct FaqOption {
     /// The label of the option (displayed to the user).
     label: String,
     /// The value of the option (used as the identifier).
     value: String,
     /// The embed to be sent when this option is selected.
-    embed: Embed,
+    // pub(crate) embed: Embed,
+    /// The components to be included with the embed.
+    // pub(crate) components: Option<Vec<Component>>,
+    pub(crate) response: InteractionResponseData,
 }
 
 impl Config {
@@ -46,22 +49,21 @@ impl Config {
             .collect()
     }
 
-    /// Returns the embed associated with a given FAQ option value.
-    pub(crate) fn faq_option_embed<S>(&self, value: S) -> Option<Embed>
+    /// Returns the FAQ option corresponding to the given value.
+    pub(crate) fn faq_option_response<S>(&self, value: S) -> Option<InteractionResponseData>
     where
         S: AsRef<str>,
     {
         self.faq_options
             .iter()
             .find(|opt| opt.value == value.as_ref())
-            .map(|opt| opt.embed.clone())
+            .map(|opt| opt.response.clone())
     }
 }
 
 /// Loads the configuration from a YAML file.
-#[tracing::instrument(ret)]
-pub(crate) fn load_config() -> Result<Config, anyhow::Error> {
-    let cfg_yaml = std::fs::read(config_path()).context("read config file")?;
+pub(crate) fn load_config(path: String) -> Result<Config, anyhow::Error> {
+    let cfg_yaml = std::fs::read(path).context("read config file")?;
     serde_yaml::from_slice(&cfg_yaml).context("parse config file")
 }
 

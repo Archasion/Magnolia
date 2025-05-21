@@ -10,7 +10,6 @@ use twilight_model::guild::Permissions;
 use twilight_model::http::interaction::{InteractionResponse, InteractionResponseType};
 use twilight_model::oauth::ApplicationIntegrationType;
 use twilight_util::builder::command::CommandBuilder;
-use twilight_util::builder::InteractionResponseDataBuilder;
 
 use crate::commands::CommandHandler;
 
@@ -70,12 +69,9 @@ impl CommandHandler for Faq<'_> {
         let CommandOptionValue::String(query) = &query.value else {
             anyhow::bail!("expected string query option");
         };
-        let Some(embed) = ctx.cfg.faq_option_embed(query) else {
+        let Some(mut response) = ctx.cfg.faq_option_response(query) else {
             anyhow::bail!("unknown query option: {}", query);
         };
-
-        // Create the response builder with an embed
-        let mut response_builder = InteractionResponseDataBuilder::new().embeds([embed]);
 
         // Add mention if provided
         let mention = data
@@ -87,7 +83,12 @@ impl CommandHandler for Faq<'_> {
             let CommandOptionValue::User(u_id) = mention.value else {
                 anyhow::bail!("expected user option");
             };
-            response_builder = response_builder.content(format!("<@{u_id}>"));
+            // Either set the content to the response or prepend it to the response
+            response.content = response
+                .content
+                .map_or(Some(format!("<@{u_id}>")), |content| {
+                    Some(format!("<@{u_id}> {content}"))
+                });
         }
 
         // Send the response
@@ -95,7 +96,7 @@ impl CommandHandler for Faq<'_> {
             .interaction(self.cmd.application_id)
             .create_response(self.cmd.id, &self.cmd.token, &InteractionResponse {
                 kind: InteractionResponseType::ChannelMessageWithSource,
-                data: Some(response_builder.build()),
+                data: Some(response),
             })
             .await?;
 
